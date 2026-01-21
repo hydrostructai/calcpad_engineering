@@ -5,6 +5,10 @@ on:
     paths:
       - 'cpdinput/**.cpd'
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -52,5 +56,8 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           git add cpdoutput/*.html calcpad.html
-          git commit -m "Auto-generate reports [skip ci]" || echo "No changes"
-          git push
+          git commit -m "Auto-generate reports [skip ci]" || echo "No changes to commit"
+          
+          # Use GITHUB_TOKEN for authentication
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/hydrostructai/calcpad_engineering.git
+          git push origin main || echo "Push failed - may already be synced"
