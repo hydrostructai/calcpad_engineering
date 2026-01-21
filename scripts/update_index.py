@@ -93,6 +93,22 @@ def extract_metadata(html_path):
             main_title = summary
             summary = ""
         
+        # MANUAL OVERRIDES for cleaner presentation
+        filename = Path(html_path).name
+        overrides = {
+            'Flat Slab FEA Optimized.html': 'Finite Element Analysis of Flat Slab',
+            'Flat Slab FEA.html': 'Finite Element Analysis of Flat Slab (Numerical)',
+            'I section properties.html': 'Design of steel I section beam',
+            'Monte-Carlo-Pi.html': 'Calculation of π by Monte-Carlo algorithm',
+            'Shear Wall Detailing for DCM.html': 'Shear Wall Detailing for Ductility Class'
+        }
+        
+        if filename in overrides:
+            main_title = overrides[filename]
+            # If the summary was already extracted from the old title, clear it
+            if summary == main_title:
+                summary = ""
+
         # Logic for icons
         icon = "📊"
         lower_title = main_title.lower()
@@ -211,7 +227,7 @@ template = f"""<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HydrostructAI - Calcpad Engineering Reports</title>
+    <title>HydrostructAI - Báo cáo tính toán Calcpad</title>
     <style>
         :root {{
             --primary: #2563eb;
