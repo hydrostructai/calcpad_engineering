@@ -12,6 +12,10 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      # Optional: set this to a valid Docker image that has calcpad-run installed
+      # Example (once you have your own image): ghcr.io/hydrostructai/calcpad:latest
+      CALCPAD_DOCKER_IMAGE: ""
     
     steps:
       - name: Checkout Repository
@@ -55,17 +59,22 @@ jobs:
           
           # Try 1: Docker image (PRIMARY METHOD)
           echo "📦 Attempting Docker image..."
-          if command -v docker &> /dev/null; then
-            if docker pull agentim/calcpad:latest 2>&1 | tail -3; then
-              echo "✅ Docker image available!"
-              # Mark Docker as the primary execution mode
-              CALCPAD_USE_DOCKER=true
-              echo "CALCPAD_USE_DOCKER=true" >> $GITHUB_ENV
+          if [ -n "${CALCPAD_DOCKER_IMAGE}" ]; then
+            if command -v docker &> /dev/null; then
+              echo "   Using image: ${CALCPAD_DOCKER_IMAGE}"
+              if docker pull "${CALCPAD_DOCKER_IMAGE}" >/dev/null 2>&1; then
+                echo "✅ Docker image available!"
+                # Mark Docker as the primary execution mode
+                CALCPAD_USE_DOCKER=true
+                echo "CALCPAD_USE_DOCKER=true" >> $GITHUB_ENV
+              else
+                echo "⚠️  Docker pull failed for ${CALCPAD_DOCKER_IMAGE} (skipping Docker mode)"
+              fi
             else
-              echo "⚠️  Docker image not available"
+              echo "⚠️  Docker command not found on runner (skipping Docker mode)"
             fi
           else
-            echo "⚠️  Docker command not found"
+            echo "ℹ️  CALCPAD_DOCKER_IMAGE not set – skipping Docker and using native install only."
           fi
           
           # Try 2: Native installation (FALLBACK)
@@ -159,7 +168,7 @@ jobs:
                 if docker run --rm \
                   -v "$(pwd):/work" \
                   -w /work \
-                  agentim/calcpad:latest \
+                  "${CALCPAD_DOCKER_IMAGE}" \
                   calcpad-run "$cpd_file" 2>&1 | tail -5; then
                   
                   if [ -f "${filename}.html" ]; then
@@ -167,7 +176,7 @@ jobs:
                     echo "  ✅ HTML generated"
                   fi
                 else
-                  echo "  ❌ Docker processing failed"
+                  echo "  ❌ Docker processing failed (image: ${CALCPAD_DOCKER_IMAGE})."
                 fi
               
               # ================================================
