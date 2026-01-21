@@ -1,0 +1,45 @@
+"Test GitHub Actions Workflow
+<hr>
+
+#hide
+'<style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #2c3e50; }
+    .result { background: #e8f5e9; padding: 15px; border-radius: 5px; }
+</style>
+#show
+
+<h2>I. PHÉP TÍNH ĐỐN GIẢN</h2>
+<div class="result">
+
+#hide
+a = 10 'm - Chiều dài
+b = 5 'm - Chiều rộng
+#show
+Chiều dài: a = ?'m
+Chiều rộng: b = ?'m
+
+#hide
+S = a*b 'm² - Diện tích
+P = 2*(a + b) 'm - Chu vi
+#show
+Diện tích: S = ?'m²
+Chu vi: P = ?'m
+
+</div>
+
+<h2>II. KẾT QUẢ</h2>
+<div class="result">
+
+'<b>Tóm tắt:</b>
+'- Hình chữ nhật $a × $b m
+'- Diện tích: <b>$S m²</b>
+'- Chu vi: <b>$P m</b>
+
+</div>
+
+#post
+<hr>
+<p style="text-align:center; color:#7f8c8d;">
+Test workflow tự động • GitHub Actions • $(date())
+</p>
