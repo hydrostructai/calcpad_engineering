@@ -1,0 +1,48 @@
+name: Calcpad Automation Workflow
+
+on:
+  push:
+    paths:
+      - 'cpdinput/**.cpd'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup .NET 8.0
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install Calcpad CLI
+        run: |
+          # Download and install Calcpad
+          wget https://github.com/Proektsoftbg/Calcpad/releases/download/v7.5.9/Calcpad.7.5.9.deb
+          sudo apt install -y ./Calcpad.7.5.9.deb
+
+      - name: Process CPD Files
+        run: |
+          mkdir -p cpdoutput
+          for file in cpdinput/*.cpd; do
+            filename=$(basename "$file" .cpd)
+            echo "Processing $file..."
+            calcpad "$file"
+            mv "cpdinput/$filename.html" "cpdoutput/"
+          done
+
+      - name: Update Navigation Index
+        run: |
+          # Tự động chèn link vào calcpad.html
+          python3 scripts/update_index.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add cpdoutput/*.html calcpad.html
+          git commit -m "Auto-generate reports from CPD updates [skip ci]" || echo "No changes to commit"
+          git push
