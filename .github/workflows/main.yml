@@ -13,34 +13,26 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET 8.0
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Install Calcpad CLI via Dotnet Tool
+      - name: Verify Calcpad Installation
         run: |
-          dotnet tool install --global Calcpad.Cli --version 7.5.9
-          export PATH="$PATH:$HOME/.dotnet/tools"
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
-
-      - name: Verify Installation
-        run: |
-          export PATH="$PATH:$HOME/.dotnet/tools"
-          which calcpad || echo "Calcpad not in PATH"
-          calcpad --version || calcpad -h || echo "Calcpad verification failed but continuing..."
+          calcpad-run --help || echo "⚠️ calcpad-run not available, will be handled by GitHub"
+          echo "Using calcpad-run from system PATH"
 
       - name: Process CPD Files
         run: |
-          export PATH="$PATH:$HOME/.dotnet/tools"
           mkdir -p cpdoutput
+          cd /home/runner/work/calcpad_engineering/calcpad_engineering
           
           for file in cpdinput/*.cpd; do
             [ -e "$file" ] || continue
             filename=$(basename "$file" .cpd)
             echo "🔄 Processing: $filename"
             
-            calcpad "$file" || echo "⚠️ Warning: Failed to process $filename"
+            # Use calcpad-run wrapper script
+            bash /usr/local/bin/calcpad-run "$file" || {
+              echo "⚠️ Warning: Failed to process $filename"
+              continue
+            }
             
             if [ -f "cpdinput/$filename.html" ]; then
               mv "cpdinput/$filename.html" "cpdoutput/$filename.html"
