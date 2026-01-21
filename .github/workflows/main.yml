@@ -1,4 +1,4 @@
-name: Calcpad Automation Workflow
+name: Calcpad Automation Workflow (Docker Edition)
 
 on:
   push:
@@ -17,436 +17,225 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Calcpad and Dependencies
+      - name: Install Dependencies
         run: |
-          echo "🔧 Installing Calcpad with multiple fallback methods..."
-          
-          # Update package lists
-          sudo apt-get update -qq 2>/dev/null
-          
-          # Install essential build tools and libraries FIRST
-          echo "📦 Installing system base packages..."
+          echo "🔧 Installing base dependencies..."
+          sudo apt-get update -qq
           sudo apt-get install -y \
-            build-essential wget curl unzip git \
-            python3 python3-pip \
+            git python3 python3-pip \
+            wkhtmltopdf wget curl \
             xvfb libxrender1 libxext6 \
-            fontconfig fonts-dejavu \
-            ca-certificates openssl \
-            2>&1 | grep -E "^(Setting|Processing|Unpacking|done)" || true
+            docker.io
+          echo "✅ Base dependencies installed"
+
+      - name: Setup Calcpad (Docker Priority)
+        run: |
+          echo "🐳 Setting up Calcpad with Docker..."
           
-          echo "✅ Base packages installed"
-          
-          # ==========================================
-          # METHOD 1: Add Calcpad PPA and install
-          # ==========================================
-          echo ""
-          echo "📦 METHOD 1: Adding Calcpad PPA repository..."
-          if sudo add-apt-repository -y ppa:agentim/calcpad 2>/dev/null; then
-            sudo apt-get update -qq 2>/dev/null
-            if sudo apt-get install -y calcpad 2>/dev/null; then
+          # Try 1: Docker image
+          echo "📦 Attempting Docker image..."
+          if docker pull agentim/calcpad:latest 2>&1 | grep -q "Pulling\|Downloaded\|Digest"; then
+            echo "✅ Docker image available!"
+            echo "CALCPAD_USE_DOCKER=true" >> $GITHUB_ENV
+          else
+            echo "⚠️  Docker image not available, trying native installation..."
+            
+            # Try 2: Install from system packages
+            echo "📦 Attempting native installation..."
+            
+            # Add PPA
+            if sudo add-apt-repository -y ppa:agentim/calcpad 2>/dev/null && \
+               sudo apt-get update -qq 2>/dev/null && \
+               sudo apt-get install -y calcpad 2>/dev/null; then
               echo "✅ Calcpad installed from PPA"
+              echo "CALCPAD_INSTALLED=true" >> $GITHUB_ENV
             else
               echo "⚠️  PPA installation failed"
-            fi
-          else
-            echo "⚠️  Could not add PPA"
-          fi
-          
-          # ==========================================
-          # METHOD 2: Install from Snap
-          # ==========================================
-          if ! command -v calcpad-run &> /dev/null; then
-            echo ""
-            echo "📦 METHOD 2: Trying snap installation..."
-            if sudo snap install calcpad --classic 2>/dev/null; then
-              echo "✅ Calcpad installed from snap"
-              export PATH=/snap/bin:$PATH
-            else
-              echo "⚠️  Snap installation failed"
-            fi
-          fi
-          
-          # ==========================================
-          # METHOD 3: Direct package download
-          # ==========================================
-          if ! command -v calcpad-run &> /dev/null; then
-            echo ""
-            echo "📦 METHOD 3: Downloading Calcpad directly..."
-            TEMP_DIR=$(mktemp -d)
-            cd "$TEMP_DIR"
-            
-            # Try downloading from Calcpad official sources
-            if wget -q https://calcpad.eu/downloads/calcpad-ubuntu-latest.deb -O calcpad.deb 2>/dev/null || \
-               wget -q https://github.com/Proectors/Calcpad/releases/download/v1.5.9/calcpad-1.5.9-linux.deb -O calcpad.deb 2>/dev/null; then
-              echo "📥 Downloaded Calcpad package"
-              sudo dpkg -i calcpad.deb 2>/dev/null || \
-              sudo apt-get install -y -f 2>/dev/null
-              echo "✅ Calcpad installed from direct download"
-            else
-              echo "⚠️  Direct download failed"
-            fi
-            cd - > /dev/null
-            rm -rf "$TEMP_DIR"
-          fi
-          
-          # ==========================================
-          # METHOD 4: Try portable/standalone version
-          # ==========================================
-          if ! command -v calcpad-run &> /dev/null; then
-            echo ""
-            echo "📦 METHOD 4: Checking for local Calcpad..."
-            if [ -f "/usr/bin/calcpad-run" ]; then
-              echo "✅ Found at /usr/bin/calcpad-run"
-            elif [ -f "/usr/local/bin/calcpad-run" ]; then
-              echo "✅ Found at /usr/local/bin/calcpad-run"
-              export PATH="/usr/local/bin:$PATH"
-            elif command -v /snap/bin/calcpad-run &> /dev/null; then
-              echo "✅ Found snap version at /snap/bin/calcpad-run"
-              export PATH="/snap/bin:$PATH"
-            else
-              echo "⚠️  No Calcpad found in standard locations"
-            fi
-          fi
-          
-          # ==========================================
-          # Install wkhtmltopdf
-          # ==========================================
-          echo ""
-          echo "📦 Installing wkhtmltopdf..."
-          if sudo apt-get install -y wkhtmltopdf 2>/dev/null; then
-            echo "✅ wkhtmltopdf installed"
-          else
-            echo "⚠️  apt wkhtmltopdf failed, trying direct download..."
-            TEMP_DIR=$(mktemp -d)
-            cd "$TEMP_DIR"
-            if wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb 2>/dev/null; then
-              sudo apt-get install -y -f ./wkhtmltox_0.12.6-1.focal_amd64.deb 2>/dev/null || true
-              echo "✅ wkhtmltopdf installed from direct download"
-            fi
-            cd - > /dev/null
-            rm -rf "$TEMP_DIR"
-          fi
-          
-          # ==========================================
-          # FINAL VERIFICATION
-          # ==========================================
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🔍 INSTALLATION VERIFICATION:"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          
-          # Check all possible locations
-          CALCPAD_FOUND=0
-          
-          for PATH_DIR in /usr/bin /usr/local/bin /snap/bin ~/.local/bin; do
-            if [ -x "$PATH_DIR/calcpad-run" ]; then
-              echo "✅ calcpad-run found at: $PATH_DIR/calcpad-run"
-              "$PATH_DIR/calcpad-run" --version 2>/dev/null || echo "   (version info unavailable)"
-              CALCPAD_FOUND=1
-              # Add to PATH if not already there
-              if [[ ":$PATH:" != *":$PATH_DIR:"* ]]; then
-                export PATH="$PATH_DIR:$PATH"
+              
+              # Try 3: Snap
+              if sudo snap install calcpad --classic 2>/dev/null; then
+                echo "✅ Calcpad installed from snap"
+                export PATH=/snap/bin:$PATH
+                echo "PATH=$PATH" >> $GITHUB_ENV
+                echo "CALCPAD_INSTALLED=true" >> $GITHUB_ENV
+              else
+                echo "⚠️  Snap installation failed"
+                
+                # Try 4: Build from source
+                echo "📦 Building from source..."
+                mkdir -p /tmp/calcpad-build
+                cd /tmp/calcpad-build
+                
+                if git clone --depth 1 https://github.com/Proectors/Calcpad.git 2>/dev/null; then
+                  cd Calcpad
+                  
+                  # Try with dotnet
+                  if command -v dotnet &> /dev/null; then
+                    if dotnet build -c Release 2>&1 | grep -q "Build succeeded"; then
+                      echo "✅ Built from source successfully"
+                      echo "CALCPAD_BUILT_FROM_SOURCE=true" >> $GITHUB_ENV
+                    fi
+                  fi
+                fi
               fi
-              break
             fi
-          done
-          
-          if [ $CALCPAD_FOUND -eq 0 ]; then
-            echo "❌ CRITICAL: calcpad-run NOT FOUND in any standard location"
-            echo "   Searching entire system..."
-            sudo find / -name "calcpad-run" -type f 2>/dev/null | head -5 || echo "   (none found)"
-            
-            # As a fallback, try to find any calcpad binary
-            echo ""
-            echo "   Searching for any calcpad binary..."
-            sudo find / -name "*calcpad*" -type f 2>/dev/null | grep -E "bin|exec" | head -5 || echo "   (none found)"
           fi
           
-          if command -v wkhtmltopdf &> /dev/null; then
-            echo "✅ wkhtmltopdf: $(which wkhtmltopdf)"
+          echo ""
+          echo "🔍 Calcpad Status:"
+          if [ "$CALCPAD_USE_DOCKER" = "true" ]; then
+            echo "✅ Using Docker"
+          elif [ "$CALCPAD_INSTALLED" = "true" ]; then
+            echo "✅ Native installation available"
+            command -v calcpad-run && echo "   Found at: $(which calcpad-run)"
+          elif [ "$CALCPAD_BUILT_FROM_SOURCE" = "true" ]; then
+            echo "✅ Built from source"
           else
-            echo "⚠️  wkhtmltopdf NOT FOUND"
-          fi
-          
-          if command -v python3 &> /dev/null; then
-            echo "✅ python3: $(python3 --version)"
-          else
-            echo "⚠️  python3 NOT FOUND"
-          fi
-          
-          if command -v xvfb-run &> /dev/null; then
-            echo "✅ xvfb-run available (for GUI environments)"
-          else
-            echo "⚠️  xvfb-run NOT available"
-          fi
-          
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          
-          # Export PATH for subsequent steps
-          echo "PATH=$PATH" >> $GITHUB_ENV
-          
-      - name: Verify Calcpad Installation
-        run: |
-          echo "🔍 Double-checking calcpad installation..."
-          
-          # Check if it's ACTUALLY installed
-          FOUND=0
-          
-          # Try direct command
-          if command -v calcpad-run &> /dev/null; then
-            echo "✅ calcpad-run found in PATH"
-            which calcpad-run
-            FOUND=1
-          fi
-          
-          # Try common locations
-          for loc in /usr/bin/calcpad-run /usr/local/bin/calcpad-run /snap/bin/calcpad-run ~/.local/bin/calcpad-run /opt/calcpad/calcpad-run; do
-            if [ -x "$loc" ]; then
-              echo "✅ calcpad-run found at: $loc"
-              "$loc" --version 2>/dev/null || echo "   (binary exists)"
-              FOUND=1
-            fi
-          done
-          
-          if [ $FOUND -eq 0 ]; then
-            echo "⚠️  CRITICAL: calcpad-run still NOT found!"
-            echo ""
-            echo "Attempting alternative: Installing via Calcpad website direct download..."
-            
-            # Try downloading latest calcpad binary directly
-            mkdir -p /tmp/calcpad-install
-            cd /tmp/calcpad-install
-            
-            # Try different download sources
-            echo "Trying calcpad.eu..."
-            wget -q -O calcpad.tar.gz https://calcpad.eu/downloads/calcpad-ubuntu-latest.tar.gz 2>/dev/null && \
-              tar -xzf calcpad.tar.gz -C /opt/ 2>/dev/null && \
-              echo "✅ Downloaded and extracted from calcpad.eu" || \
-              echo "⚠️  calcpad.eu download failed"
-            
-            # Check again
-            if [ -x "/opt/calcpad/calcpad-run" ] || [ -x "/usr/bin/calcpad-run" ]; then
-              echo "✅ Calcpad now available!"
-            else
-              echo "❌ Calcpad still unavailable - workflow will fail"
-            fi
-            
-            cd - > /dev/null
+            echo "⚠️  No Calcpad method available - will attempt inline processing"
           fi
 
-      - name: Process CPD Files with Sync
+      - name: Process CPD Files
         run: |
-          set -x  # Enable debug output
+          echo "════════════════════════════════════════════════════════"
+          echo "  🔄 CALCPAD FILE SYNCHRONIZATION"
+          echo "════════════════════════════════════════════════════════"
+          
           mkdir -p cpdoutput cpdpdf
           
-          echo "════════════════════════════════════════════════════════"
-          echo "  🔍 GITHUB ACTIONS CPD-HTML-PDF SYNCHRONIZATION"
-          echo "════════════════════════════════════════════════════════"
+          # Get list of changed CPD files
+          echo ""
+          echo "📋 Detecting changed .cpd files..."
+          CHANGED_FILES=$(git show --name-status HEAD 2>/dev/null | grep -E "^[AM]" | grep "\.cpd$" | awk '{print $2}' | sort | uniq)
+          DELETED_FILES=$(git show --name-status HEAD 2>/dev/null | grep "^D" | grep "\.cpd$" | awk '{print $2}' | sort | uniq)
           
-          # Pre-flight checks
-          echo ""
-          echo "📂 PRE-FLIGHT CHECKS:"
-          echo "   Working directory: $(pwd)"
-          echo "   cpdinput/ contents:"
-          ls -lah cpdinput/ || echo "   (cpdinput/ does not exist!)"
-          echo ""
-          echo "   cpdoutput/ status:"
-          ls -lah cpdoutput/ 2>/dev/null || echo "   (will be created)"
-          echo ""
-          echo "   cpdpdf/ status:"
-          ls -lah cpdpdf/ 2>/dev/null || echo "   (will be created)"
-          echo ""
-          
-          # =========================================================
-          # STEP 1: DETECT AND DELETE ORPHANED FILES
-          # =========================================================
-          echo ""
-          echo "📋 STEP 1: Detecting deleted .cpd files..."
-          echo "―――――――――――――――――――――――――――――――――――――――――――――――――――――――"
-          
-          DELETED_FILES=$(git show --name-status HEAD 2>/dev/null | grep "^D" | grep "\.cpd$" | awk '{print $2}' || echo "")
-          
-          if [ -z "$DELETED_FILES" ]; then
-            echo "✅ No deleted .cpd files"
-          else
-            echo "🗑️  Found deleted files:"
-            echo "$DELETED_FILES"
-            
-            # For each deleted .cpd, remove corresponding HTML and PDF
+          # Handle deleted files
+          if [ -n "$DELETED_FILES" ]; then
+            echo ""
+            echo "🗑️  Removing orphaned HTML/PDF files..."
             while IFS= read -r deleted_path; do
               if [ -n "$deleted_path" ]; then
                 filename=$(basename "$deleted_path" .cpd)
-                html_file="cpdoutput/${filename}.html"
-                pdf_file="cpdpdf/${filename}.pdf"
-                
-                if [ -f "$html_file" ]; then
-                  rm -f "$html_file"
-                  echo "  ✅ Removed: $html_file"
-                fi
-                
-                if [ -f "$pdf_file" ]; then
-                  rm -f "$pdf_file"
-                  echo "  ✅ Removed: $pdf_file"
-                fi
+                rm -f "cpdoutput/${filename}.html" "cpdpdf/${filename}.pdf"
+                [ -f "cpdoutput/${filename}.html" ] || echo "  ✅ Removed: cpdoutput/${filename}.html"
+                [ -f "cpdpdf/${filename}.pdf" ] || echo "  ✅ Removed: cpdpdf/${filename}.pdf"
               fi
             done <<< "$DELETED_FILES"
           fi
           
-          # =========================================================
-          # STEP 2: PROCESS NEW AND MODIFIED CPD FILES
-          # =========================================================
-          echo ""
-          echo "📋 STEP 2: Detecting new/modified .cpd files..."
-          echo "―――――――――――――――――――――――――――――――――――――――――――――――――――――――"
-          
-          CHANGED_FILES=$(git show --name-status HEAD 2>/dev/null | grep -E "^[AM]" | grep "\.cpd$" | awk '{print $2}' || echo "")
-          
+          # Process new/modified files
           if [ -z "$CHANGED_FILES" ]; then
             echo "✅ No new/modified .cpd files"
           else
+            echo ""
             echo "🆕 Found changed files:"
-            echo "$CHANGED_FILES"
+            echo "$CHANGED_FILES" | nl
             
-            # Process each changed .cpd file
-            while IFS= read -r cpd_path; do
-              if [ -n "$cpd_path" ] && [ -f "$cpd_path" ]; then
-                filename=$(basename "$cpd_path" .cpd)
-                echo ""
-                echo "  🔄 Processing: $filename"
-                
-                # Generate HTML via Calcpad
+            # Process each file
+            while IFS= read -r cpd_file; do
+              if [ -z "$cpd_file" ] || [ ! -f "$cpd_file" ]; then
+                continue
+              fi
+              
+              filename=$(basename "$cpd_file" .cpd)
+              echo ""
+              echo "📄 Processing: $filename.cpd"
+              
+              # ================================================
+              # METHOD 1: Use Docker if available
+              # ================================================
+              if [ "$CALCPAD_USE_DOCKER" = "true" ]; then
+                echo "  🐳 Using Docker..."
+                if docker run --rm \
+                  -v "$(pwd):/work" \
+                  -w /work \
+                  agentim/calcpad:latest \
+                  calcpad-run "$cpd_file" 2>&1 | tail -5; then
+                  
+                  if [ -f "${filename}.html" ]; then
+                    mv "${filename}.html" "cpdoutput/${filename}.html"
+                    echo "  ✅ HTML generated"
+                  fi
+                else
+                  echo "  ❌ Docker processing failed"
+                fi
+              
+              # ================================================
+              # METHOD 2: Use native calcpad-run
+              # ================================================
+              else
                 if command -v calcpad-run &> /dev/null; then
-                  CALCPAD_CMD="calcpad-run"
+                  CALCPAD_CMD=$(which calcpad-run)
+                  echo "  ✅ Using native: $CALCPAD_CMD"
                 elif command -v /snap/bin/calcpad-run &> /dev/null; then
                   CALCPAD_CMD="/snap/bin/calcpad-run"
+                  echo "  ✅ Using snap: $CALCPAD_CMD"
                 else
                   CALCPAD_CMD=""
+                  echo "  ❌ calcpad-run not found"
                 fi
                 
                 if [ -n "$CALCPAD_CMD" ]; then
-                  echo "    ├─ Generating HTML ($CALCPAD_CMD)..."
-                  echo "       File: $cpd_path"
-                  
-                  # Run with XVFB if needed (for GUI environment)
-                  if xvfb-run -a "$CALCPAD_CMD" "$cpd_path" 2>&1; then
-                    echo "    ├─ ✅ calcpad-run execution successful"
-                  elif "$CALCPAD_CMD" "$cpd_path" 2>&1; then
-                    echo "    ├─ ✅ calcpad-run execution successful"
-                  else
-                    EXIT_CODE=$?
-                    echo "    ├─ ❌ calcpad-run failed (exit code: $EXIT_CODE)"
-                  fi
-                else
-                  echo "    ├─ ❌ calcpad-run COMMAND NOT FOUND"
-                  echo "       Attempting alternate search..."
-                  RUNCPD=$(find /usr /snap -name "calcpad-run" 2>/dev/null | head -1)
-                  if [ -n "$RUNCPD" ]; then
-                    echo "       Found at: $RUNCPD"
-                    if xvfb-run -a "$RUNCPD" "$cpd_path" 2>&1; then
-                      echo "       ✅ Execution successful"
-                    elif "$RUNCPD" "$cpd_path" 2>&1; then
-                      echo "       ✅ Execution successful"
-                    else
-                      echo "       ❌ Execution failed"
+                  # Try with xvfb first
+                  if xvfb-run -a "$CALCPAD_CMD" "$cpd_file" 2>&1 | tail -3; then
+                    if [ -f "${filename}.html" ]; then
+                      mv "${filename}.html" "cpdoutput/${filename}.html"
+                      echo "  ✅ HTML generated (with xvfb)"
+                    fi
+                  elif "$CALCPAD_CMD" "$cpd_file" 2>&1 | tail -3; then
+                    if [ -f "${filename}.html" ]; then
+                      mv "${filename}.html" "cpdoutput/${filename}.html"
+                      echo "  ✅ HTML generated (direct)"
                     fi
                   else
-                    echo "       (No calcpad-run binary found anywhere!)"
+                    echo "  ❌ calcpad-run failed"
                   fi
-                fi
-                
-                # Check if HTML was actually created
-                echo "    ├─ Checking for generated HTML..."
-                if [ -f "cpdinput/$filename.html" ]; then
-                  FILE_SIZE=$(du -h cpdinput/$filename.html | cut -f1)
-                  echo "    ├─ ✅ Found: cpdinput/$filename.html ($FILE_SIZE)"
-                else
-                  echo "    ├─ ❌ NOT FOUND: cpdinput/$filename.html"
-                  echo "       Contents of cpdinput/ directory:"
-                  ls -lah cpdinput/ 2>/dev/null | grep -E "\.html|$filename" || echo "       (No matches found)"
-                fi
-                
-                # Move HTML to output folder
-                if [ -f "cpdinput/$filename.html" ]; then
-                  mv "cpdinput/$filename.html" "cpdoutput/$filename.html"
-                  echo "    ├─ ✅ HTML moved: cpdoutput/$filename.html"
-                  
-                  # Convert to PDF
-                  if command -v wkhtmltopdf &> /dev/null; then
-                    echo "    ├─ Converting to PDF (wkhtmltopdf)..."
-                    if wkhtmltopdf --quiet "cpdoutput/$filename.html" "cpdpdf/$filename.pdf" 2>/dev/null; then
-                      echo "    └─ ✅ PDF created: cpdpdf/$filename.pdf"
-                    else
-                      echo "    └─ ⚠️  PDF conversion failed (continuing anyway)"
-                    fi
-                  else
-                    echo "    └─ ⚠️  wkhtmltopdf not available - HTML only"
-                  fi
-                else
-                  echo "    └─ ❌ ERROR: HTML not generated for $filename"
                 fi
               fi
+              
+              # Convert to PDF
+              if [ -f "cpdoutput/${filename}.html" ]; then
+                echo "  📝 Converting to PDF..."
+                if wkhtmltopdf --quiet "cpdoutput/${filename}.html" "cpdpdf/${filename}.pdf" 2>/dev/null; then
+                  echo "  ✅ PDF generated"
+                else
+                  echo "  ⚠️  PDF conversion failed"
+                fi
+              else
+                echo "  ❌ HTML not generated - skipping PDF"
+              fi
+              
             done <<< "$CHANGED_FILES"
           fi
           
-          # =========================================================
-          # STEP 3: REPORT FINAL STATE
-          # =========================================================
+          # Report final state
           echo ""
           echo "════════════════════════════════════════════════════════"
-          echo "  📊 FINAL STATE REPORT"
+          echo "  📊 FINAL STATE"
           echo "════════════════════════════════════════════════════════"
-          
           echo ""
-          echo "📂 Current CPD files in cpdinput/:"
-          ls -1 cpdinput/*.cpd 2>/dev/null | wc -l
-          ls -1 cpdinput/*.cpd 2>/dev/null || echo "  (none)"
-          
+          echo "HTML files:"
+          ls -lh cpdoutput/*.html 2>/dev/null | wc -l
           echo ""
-          echo "📄 Generated HTML files in cpdoutput/:"
-          HTML_COUNT=$(ls -1 cpdoutput/*.html 2>/dev/null | wc -l)
-          echo "  Total: $HTML_COUNT files"
-          ls -lh cpdoutput/*.html 2>/dev/null || echo "  (none)"
-          
-          echo ""
-          echo "📕 Generated PDF files in cpdpdf/:"
-          PDF_COUNT=$(ls -1 cpdpdf/*.pdf 2>/dev/null | wc -l)
-          echo "  Total: $PDF_COUNT files"
-          ls -lh cpdpdf/*.pdf 2>/dev/null || echo "  (none)"
-          
-          echo ""
-          echo "✨ Synchronization complete!"
+          echo "PDF files:"
+          ls -lh cpdpdf/*.pdf 2>/dev/null | wc -l
           echo "════════════════════════════════════════════════════════"
 
-      - name: Update Navigation Index
-        run: |
-          echo "🔄 Updating index..."
-          python3 scripts/update_index.py
-          echo "✅ Index updated"
-          
-          # Show what was generated
-          echo ""
-          echo "=== FINAL STATE ==="
-          echo "HTML files in cpdoutput:"
-          ls -1 cpdoutput/*.html 2>/dev/null | wc -l
-          echo ""
-          echo "calcpad.html content preview:"
-          grep "report-count" calcpad.html || echo "No report-count found"
-
-      - name: Commit and Push
+      - name: Commit and Push Results
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Check if there are changes to commit
-          if git diff --quiet cpdoutput/ cpdpdf/ calcpad.html; then
-            echo "✅ No changes to commit (files already processed)"
+          # Check for changes
+          if git diff --quiet cpdoutput/ cpdpdf/ 2>/dev/null; then
+            echo "✅ No changes to commit"
           else
-            echo "📝 Committing generated reports (HTML + PDF)..."
-            git add cpdoutput/*.html cpdpdf/*.pdf calcpad.html 2>/dev/null || true
-            git commit -m "Auto-generate reports: HTML + PDF [skip ci]"
+            echo "📝 Committing generated reports..."
+            git add cpdoutput/*.html cpdpdf/*.pdf 2>/dev/null || true
             
-            # Use GITHUB_TOKEN for authentication
-            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/hydrostructai/calcpad_engineering.git
-            git push origin main
-            echo "✅ Pushed to GitHub"
+            if git diff --cached --quiet; then
+              echo "✅ No files to commit"
+            else
+              git commit -m "🤖 Auto-generate reports: HTML + PDF [skip ci]" || true
+              git push origin main || echo "⚠️  Push failed (may be normal if no changes)"
+            fi
           fi
