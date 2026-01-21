@@ -97,7 +97,7 @@ def extract_metadata(html_path):
         filename = Path(html_path).name
         overrides = {
             'Flat Slab FEA Optimized.html': 'Finite Element Analysis of Flat Slab',
-            'Flat Slab FEA.html': 'Finite Element Analysis of Flat Slab (Numerical)',
+            'Flat Slab FEA.html': 'Finite Element Analysis of Flat Slab',
             'I section properties.html': 'Design of steel I section beam',
             'Monte-Carlo-Pi.html': 'Calculation of π by Monte-Carlo algorithm',
             'Shear Wall Detailing for DCM.html': 'Shear Wall Detailing for Ductility Class'
@@ -105,9 +105,8 @@ def extract_metadata(html_path):
         
         if filename in overrides:
             main_title = overrides[filename]
-            # If the summary was already extracted from the old title, clear it
-            if summary == main_title:
-                summary = ""
+            # Clear summary for overridden items to keep it clean as requested
+            summary = ""
 
         # Logic for icons
         icon = "📊"
