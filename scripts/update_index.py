@@ -132,36 +132,35 @@ for idx, filename in enumerate(html_files, 1):
         'size': metadata['file_size'],
         'pdf_size': pdf_size,
         'has_pdf': has_pdf,
+        'has_charts': metadata['has_charts'],
         'description': description,
         'sections': metadata['h2_list']
     })
 
-# Generate detailed HTML index with both HTML and PDF links
+# Generate table rows with description + links (no sizes)
 links_html = ""
 if reports:
     for report in reports:
-        links_html += f"""        <li>
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-                <div style="flex: 1;">
-                    <span style="font-weight: bold; color: #7f8c8d; margin-right: 10px;">#{report['index']}</span>
-                    <a href="cpdoutput/{report['filename']}" style="font-size: 1.1em; margin-right: 15px;">📄 HTML</a>
-                    {f'<a href="cpdpdf/{report["pdf_filename"]}" style="font-size: 1.1em;">📕 PDF</a>' if report['has_pdf'] else '<span style="color: #bdc3c7;">📕 PDF</span>'}
-                    <div style="margin-top: 8px;">
-                        <strong>{report['name']}</strong>
+        icon = "📈" if report.get('has_charts') else "📄"
+        desc = report['description'] if report['description'] else report['title']
+        links_html += f"""            <tr>
+                <td style=\"padding:12px 10px; vertical-align:top;\">
+                    <div style=\"font-size:1.5em; font-weight:700; display:flex; gap:10px; align-items:flex-start;\">
+                        <span>{icon}</span>
+                        <span>{report['title']}</span>
                     </div>
-                    <div style="color: #95a5a6; font-size: 0.9em; margin-top: 5px;">
-                        {report['description']}
-                    </div>
-                    <div style="color: #7f8c8d; font-size: 0.85em; margin-top: 8px;">
-                        📊 HTML: {report['size']}
-                        {f' | 📕 PDF: {report["pdf_size"]}' if report['has_pdf'] else ''}
-                    </div>
-                </div>
-            </div>
-        </li>
+                    <div style=\"color:#7f8c8d; margin-top:6px;\">{desc}</div>
+                </td>
+                <td style=\"padding:12px 10px; vertical-align:top;\">
+                    <a href=\"cpdoutput/{report['filename']}\" style=\"font-size:1.1em; font-weight:600;\">📄 HTML</a>
+                </td>
+                <td style=\"padding:12px 10px; vertical-align:top;\">
+                    {f'<a href="cpdpdf/{report["pdf_filename"]}" style="font-size:1.1em; font-weight:600;">📕 PDF</a>' if report['has_pdf'] else '<span style="color:#bdc3c7;">📕 PDF</span>'}
+                </td>
+            </tr>
 """
 else:
-    links_html = '<li>Chưa có báo cáo nào.</li>'
+    links_html = "            <tr><td colspan=\"3\" style=\"padding:12px 10px;\">Chưa có báo cáo nào.</td></tr>"
 
 # Create/update calcpad.html
 template = f"""<!DOCTYPE html>
@@ -195,23 +194,25 @@ template = f"""<!DOCTYPE html>
             font-size: 0.95em;
             margin-bottom: 20px;
         }}
-        ul {{ 
-            list-style-type: none; 
-            padding: 0; 
-            margin: 0;
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
         }}
-        li {{ 
-            background: #f8f9fa; 
-            margin: 15px 0; 
-            padding: 20px; 
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-            transition: all 0.3s ease;
+        thead th {{
+            text-align: left;
+            padding: 12px 10px;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }}
-        li:hover {{
+        tbody tr:nth-child(even) {{ background: #f8f9fa; }}
+        tbody tr:hover {{
             background: #ecf0f1;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transform: translateX(4px);
         }}
         a {{ 
             text-decoration: none; 
@@ -237,8 +238,17 @@ template = f"""<!DOCTYPE html>
     <div class="container">
         <h1>📊 Danh sách báo cáo kỹ thuật</h1>
         <div class="report-count">Tổng cộng: <strong>{len(reports)}</strong> báo cáo | Cập nhật: {datetime.now().strftime('%d/%m/%Y %H:%M')}</div>
-        <ul>
-{links_html}        </ul>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:60%;">Nội dung tính toán</th>
+                    <th style="width:20%;">HTML</th>
+                    <th style="width:20%;">PDF</th>
+                </tr>
+            </thead>
+            <tbody>
+{links_html}            </tbody>
+        </table>
         <div class="footer">
             <p>Calcpad Engineering Reports • <a href="https://hydrostructai.com" target="_blank">HydrostructAI</a> • Auto-generated by GitHub Actions</p>
             <p style="font-size: 0.85em;">📄 HTML (interactive) | 📕 PDF (printable)</p>
