@@ -28,65 +28,135 @@ jobs:
             find / -name "calcpad-run" -o -name "calcpad.exe" 2>/dev/null | head -3
           fi
 
-      - name: Process CPD Files
+      - name: Process CPD Files with Sync
         run: |
           set -x  # Enable debug output
           mkdir -p cpdoutput cpdpdf
           
-          # List all CPD files for debugging
-          echo "=== CPD FILES FOUND ==="
-          find cpdinput -maxdepth 1 -name "*.cpd" -type f
-          echo "========================"
+          echo "════════════════════════════════════════════════════════"
+          echo "  🔍 GITHUB ACTIONS CPD-HTML-PDF SYNCHRONIZATION"
+          echo "════════════════════════════════════════════════════════"
           
-          # Process each file
-          for file in cpdinput/*.cpd; do
-            [ -e "$file" ] || continue
-            filename=$(basename "$file" .cpd)
-            echo "🔄 Processing: $filename from $file"
-            
-            # Try calcpad-run first
-            if command -v calcpad-run &> /dev/null; then
-              echo "  Using: calcpad-run"
-              calcpad-run "$file" || true
-            else
-              echo "  ⚠️ calcpad-run not available - trying find"
-              RUNCPD=$(find /usr -name "runcpd" 2>/dev/null | head -1)
-              if [ -n "$RUNCPD" ]; then
-                echo "  Using: $RUNCPD"
-                bash "$RUNCPD" "$file" || true
-              fi
-            fi
-            
-            # Check if HTML was generated
-            if [ -f "cpdinput/$filename.html" ]; then
-              mv "cpdinput/$filename.html" "cpdoutput/$filename.html"
-              echo "✅ Generated HTML: cpdoutput/$filename.html"
-              
-              # Convert HTML to PDF
-              if command -v wkhtmltopdf &> /dev/null; then
-                echo "  Converting to PDF..."
-                wkhtmltopdf --quiet "cpdoutput/$filename.html" "cpdpdf/$filename.pdf" 2>/dev/null || true
-                if [ -f "cpdpdf/$filename.pdf" ]; then
-                  echo "✅ Generated PDF: cpdpdf/$filename.pdf"
-                else
-                  echo "⚠️ PDF generation failed for $filename"
-                fi
-              else
-                echo "⚠️ wkhtmltopdf not available - skipping PDF"
-              fi
-            else
-              echo "❌ HTML not generated for $filename"
-              # List what files are in cpdinput for debugging
-              ls -la cpdinput/ | grep -i "$filename" || echo "No files matching pattern"
-            fi
-          done
-          
-          echo "=== FINAL OUTPUT CONTENTS ===" 
-          echo "HTML files:"
-          ls -lh cpdoutput/ 2>/dev/null || echo "No HTML files"
+          # =========================================================
+          # STEP 1: DETECT AND DELETE ORPHANED FILES
+          # =========================================================
           echo ""
-          echo "PDF files:"
-          ls -lh cpdpdf/ 2>/dev/null || echo "No PDF files"
+          echo "📋 STEP 1: Detecting deleted .cpd files..."
+          echo "―――――――――――――――――――――――――――――――――――――――――――――――――――――――"
+          
+          DELETED_FILES=$(git show --name-status HEAD 2>/dev/null | grep "^D" | grep "\.cpd$" | awk '{print $2}' || echo "")
+          
+          if [ -z "$DELETED_FILES" ]; then
+            echo "✅ No deleted .cpd files"
+          else
+            echo "🗑️  Found deleted files:"
+            echo "$DELETED_FILES"
+            
+            # For each deleted .cpd, remove corresponding HTML and PDF
+            while IFS= read -r deleted_path; do
+              if [ -n "$deleted_path" ]; then
+                filename=$(basename "$deleted_path" .cpd)
+                html_file="cpdoutput/${filename}.html"
+                pdf_file="cpdpdf/${filename}.pdf"
+                
+                if [ -f "$html_file" ]; then
+                  rm -f "$html_file"
+                  echo "  ✅ Removed: $html_file"
+                fi
+                
+                if [ -f "$pdf_file" ]; then
+                  rm -f "$pdf_file"
+                  echo "  ✅ Removed: $pdf_file"
+                fi
+              fi
+            done <<< "$DELETED_FILES"
+          fi
+          
+          # =========================================================
+          # STEP 2: PROCESS NEW AND MODIFIED CPD FILES
+          # =========================================================
+          echo ""
+          echo "📋 STEP 2: Detecting new/modified .cpd files..."
+          echo "―――――――――――――――――――――――――――――――――――――――――――――――――――――――"
+          
+          CHANGED_FILES=$(git show --name-status HEAD 2>/dev/null | grep -E "^[AM]" | grep "\.cpd$" | awk '{print $2}' || echo "")
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "✅ No new/modified .cpd files"
+          else
+            echo "🆕 Found changed files:"
+            echo "$CHANGED_FILES"
+            
+            # Process each changed .cpd file
+            while IFS= read -r cpd_path; do
+              if [ -n "$cpd_path" ] && [ -f "$cpd_path" ]; then
+                filename=$(basename "$cpd_path" .cpd)
+                echo ""
+                echo "  🔄 Processing: $filename"
+                
+                # Generate HTML via Calcpad
+                if command -v calcpad-run &> /dev/null; then
+                  echo "    ├─ Generating HTML (calcpad-run)..."
+                  calcpad-run "$cpd_path" || true
+                else
+                  echo "    ├─ calcpad-run not found - attempting alternate method..."
+                  RUNCPD=$(find /usr -name "runcpd" 2>/dev/null | head -1)
+                  if [ -n "$RUNCPD" ]; then
+                    bash "$RUNCPD" "$cpd_path" || true
+                  fi
+                fi
+                
+                # Move HTML to output folder
+                if [ -f "cpdinput/$filename.html" ]; then
+                  mv "cpdinput/$filename.html" "cpdoutput/$filename.html"
+                  echo "    ├─ ✅ HTML moved: cpdoutput/$filename.html"
+                  
+                  # Convert to PDF
+                  if command -v wkhtmltopdf &> /dev/null; then
+                    echo "    ├─ Converting to PDF (wkhtmltopdf)..."
+                    if wkhtmltopdf --quiet "cpdoutput/$filename.html" "cpdpdf/$filename.pdf" 2>/dev/null; then
+                      echo "    └─ ✅ PDF created: cpdpdf/$filename.pdf"
+                    else
+                      echo "    └─ ⚠️  PDF conversion failed (continuing anyway)"
+                    fi
+                  else
+                    echo "    └─ ⚠️  wkhtmltopdf not available - HTML only"
+                  fi
+                else
+                  echo "    └─ ❌ ERROR: HTML not generated for $filename"
+                fi
+              fi
+            done <<< "$CHANGED_FILES"
+          fi
+          
+          # =========================================================
+          # STEP 3: REPORT FINAL STATE
+          # =========================================================
+          echo ""
+          echo "════════════════════════════════════════════════════════"
+          echo "  📊 FINAL STATE REPORT"
+          echo "════════════════════════════════════════════════════════"
+          
+          echo ""
+          echo "📂 Current CPD files in cpdinput/:"
+          ls -1 cpdinput/*.cpd 2>/dev/null | wc -l
+          ls -1 cpdinput/*.cpd 2>/dev/null || echo "  (none)"
+          
+          echo ""
+          echo "📄 Generated HTML files in cpdoutput/:"
+          HTML_COUNT=$(ls -1 cpdoutput/*.html 2>/dev/null | wc -l)
+          echo "  Total: $HTML_COUNT files"
+          ls -lh cpdoutput/*.html 2>/dev/null || echo "  (none)"
+          
+          echo ""
+          echo "📕 Generated PDF files in cpdpdf/:"
+          PDF_COUNT=$(ls -1 cpdpdf/*.pdf 2>/dev/null | wc -l)
+          echo "  Total: $PDF_COUNT files"
+          ls -lh cpdpdf/*.pdf 2>/dev/null || echo "  (none)"
+          
+          echo ""
+          echo "✨ Synchronization complete!"
+          echo "════════════════════════════════════════════════════════"
 
       - name: Update Navigation Index
         run: |
