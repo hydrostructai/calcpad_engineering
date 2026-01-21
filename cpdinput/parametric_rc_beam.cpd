@@ -1,4 +1,5 @@
-"Vẽ 3D dầm bê tông cốt thép - Tính toán mô men uốn theo EC2
+"Tính toán mô men uốn theo EC2
+'Vẽ 3D dầm bê tông cốt thép 
 '<h3>I. HÌNH HỌC DẦM</h3>
 'Chiều dài dầm -'l = 6m
 'Chiều rộng thân dầm -'b = 250mm', chiều cao -'h = 800mm

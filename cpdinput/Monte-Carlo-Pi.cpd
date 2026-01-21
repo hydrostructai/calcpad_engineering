@@ -1,4 +1,4 @@
-"Calculation of π by Monte-Carlo algorithm
+"Calculation of π by Monte-Carlo algorithm 
 n = 10000
 x = random(fill(vector_hp(n); 1))
 y = random(fill(Vector_hp(n); 1))

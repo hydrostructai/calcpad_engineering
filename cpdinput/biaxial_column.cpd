@@ -1,5 +1,4 @@
-' Phân tích Cột BTCT chịu Nén lệch tâm Xiên - Mô hình Mander
-
+' Phân tích Cột BTCT chịu Nén lệch tâm Xiên - ACI 318:25
 ' I. THÔNG SỐ HÌNH HỌC MẶT CẮT
 ' Kích thước mặt cắt:
 Lx = 500 \ mm - Chiều rộng mặt cắt

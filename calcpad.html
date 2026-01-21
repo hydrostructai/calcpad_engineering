@@ -1,138 +1,177 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>HydrostructAI - Calcpad Reports</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydrostructAI - Calcpad Engineering Reports</title>
     <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
         body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
             margin: 0; 
-            padding: 40px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
+            padding: 20px;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
         }
         .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
+            max-width: 1100px;
+            margin: 40px auto;
+            background: var(--card-bg);
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        header {
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
         }
         h1 { 
-            color: #2c3e50; 
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
-        }
-        .report-count {
-            color: #7f8c8d;
-            font-size: 0.95em;
-            margin-bottom: 20px;
-        }
-        ul { 
-            list-style-type: none; 
-            padding: 0; 
             margin: 0;
+            color: var(--text-main);
+            font-size: 2rem;
+            font-weight: 800;
         }
-        li { 
-            background: #f8f9fa; 
-            margin: 15px 0; 
-            padding: 20px; 
+        .stats {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th {
+            text-align: left;
+            padding: 15px;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        td {
+            padding: 20px 15px;
+            vertical-align: middle;
+        }
+        .col-desc { width: 60%; }
+        .col-link { width: 20%; text-align: center; }
+        
+        .report-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .report-summary {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        
+        .btn-html, .btn-pdf {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
             border-radius: 8px;
-            border-left: 4px solid #3498db;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 0.9rem;
         }
-        li:hover {
-            background: #ecf0f1;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateX(5px);
+        .btn-html {
+            background: #eff6ff;
+            color: #1d4ed8;
         }
-        a { 
-            text-decoration: none; 
-            color: #3498db; 
-            font-weight: bold;
-            transition: color 0.3s ease;
+        .btn-html:hover {
+            background: #dbeafe;
         }
-        a:hover { 
-            color: #2980b9;
-            text-decoration: underline;
+        .btn-pdf {
+            background: #fff1f2;
+            color: #e11d48;
         }
+        .btn-pdf:hover {
+            background: #ffe4e6;
+        }
+        .no-pdf {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
         .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ecf0f1;
-            color: #7f8c8d;
-            font-size: 0.9em;
+            margin-top: 50px;
             text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 20px; }
+            .report-title { font-size: 1.2rem; }
+            th, td { padding: 10px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Danh sách báo cáo kỹ thuật</h1>
-        <div class="report-count">Tổng cộng: <strong>3</strong> báo cáo | Cập nhật: 21/01/2026 17:59</div>
-        <ul>
-        <li>
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-                <div style="flex: 1;">
-                    <span style="font-weight: bold; color: #7f8c8d; margin-right: 10px;">#1</span>
-                    <a href="cpdoutput/I section properties.html" style="font-size: 1.1em; margin-right: 15px;">📄 HTML</a>
-                    <span style="color: #bdc3c7;">📕 PDF</span>
-                    <div style="margin-top: 8px;">
-                        <strong>I section properties</strong>
-                    </div>
-                    <div style="color: #95a5a6; font-size: 0.9em; margin-top: 5px;">
-                        📈 Có biểu đồ
-                    </div>
-                    <div style="color: #7f8c8d; font-size: 0.85em; margin-top: 8px;">
-                        📊 HTML: 43.2KB
-                        
-                    </div>
-                </div>
+        <header>
+            <div>
+                <h1>📊 Engineering Calc Reports</h1>
+                <div class="stats">HydrostructAI Engineering Excellence</div>
             </div>
-        </li>
-        <li>
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-                <div style="flex: 1;">
-                    <span style="font-weight: bold; color: #7f8c8d; margin-right: 10px;">#2</span>
-                    <a href="cpdoutput/biaxial_column.html" style="font-size: 1.1em; margin-right: 15px;">📄 HTML</a>
-                    <span style="color: #bdc3c7;">📕 PDF</span>
-                    <div style="margin-top: 8px;">
-                        <strong>biaxial_column</strong>
-                    </div>
-                    <div style="color: #95a5a6; font-size: 0.9em; margin-top: 5px;">
-                        Báo cáo tính toán
-                    </div>
-                    <div style="color: #7f8c8d; font-size: 0.85em; margin-top: 8px;">
-                        📊 HTML: 34.6KB
-                        
-                    </div>
-                </div>
+            <div style="text-align: right;">
+                <strong style="font-size: 1.2em;">0</strong> items<br>
+                <small>Updated: 22/01/2026 01:47</small>
             </div>
-        </li>
-        <li>
-            <div style="display: flex; justify-content: space-between; align-items: start;">
-                <div style="flex: 1;">
-                    <span style="font-weight: bold; color: #7f8c8d; margin-right: 10px;">#3</span>
-                    <a href="cpdoutput/parametric_rc_beam.html" style="font-size: 1.1em; margin-right: 15px;">📄 HTML</a>
-                    <span style="color: #bdc3c7;">📕 PDF</span>
-                    <div style="margin-top: 8px;">
-                        <strong>parametric_rc_beam</strong>
-                    </div>
-                    <div style="color: #95a5a6; font-size: 0.9em; margin-top: 5px;">
-                        Báo cáo tính toán
-                    </div>
-                    <div style="color: #7f8c8d; font-size: 0.85em; margin-top: 8px;">
-                        📊 HTML: 35.0KB
-                        
-                    </div>
-                </div>
-            </div>
-        </li>
-        </ul>
+        </header>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Nội dung tính toán</th>
+                    <th style="text-align: center;">Bản HTML</th>
+                    <th style="text-align: center;">Bản PDF</th>
+                </tr>
+            </thead>
+            <tbody>
+            <tr><td colspan="3" style="padding:40px; text-align:center; color:#95a5a6;">Chưa có báo cáo nào được tạo.</td></tr>            </tbody>
+        </table>
+        
         <div class="footer">
-            <p>Calcpad Engineering Reports • <a href="https://hydrostructai.com" target="_blank">HydrostructAI</a> • Auto-generated by GitHub Actions</p>
-            <p style="font-size: 0.85em;">📄 HTML (interactive) | 📕 PDF (printable)</p>
+            <p>
+                Powered by <a href="https://calcpad.eu" target="_blank">Calcpad</a> & 
+                <a href="https://github.com/Proektsoftbg/Calcpad" target="_blank">Proektsoftbg</a>
+            </p>
+            <p>© 2026 <a href="https://hydrostructai.com" target="_blank">HydrostructAI</a>. All rights reserved.</p>
         </div>
     </div>
 </body>

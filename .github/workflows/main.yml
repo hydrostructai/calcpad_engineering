@@ -291,22 +291,28 @@ jobs:
           ls -lh cpdpdf/*.pdf 2>/dev/null | wc -l
           echo "════════════════════════════════════════════════════════"
 
+      - name: Update Report Index
+        run: |
+          echo "🔄 Updating index..."
+          python3 scripts/update_index.py
+          echo "✅ Index updated"
+
       - name: Commit and Push Results
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           # Check for changes
-          if git diff --quiet cpdoutput/ cpdpdf/ 2>/dev/null; then
+          if git diff --quiet cpdoutput/ cpdpdf/ calcpad.html 2>/dev/null; then
             echo "✅ No changes to commit"
           else
-            echo "📝 Committing generated reports..."
-            git add cpdoutput/*.html cpdpdf/*.pdf 2>/dev/null || true
+            echo "📝 Committing generated reports and index..."
+            git add cpdoutput/*.html cpdpdf/*.pdf calcpad.html 2>/dev/null || true
             
             if git diff --cached --quiet; then
               echo "✅ No files to commit"
             else
-              git commit -m "🤖 Auto-generate reports: HTML + PDF [skip ci]" || true
+              git commit -m "🤖 Auto-generate reports and index: HTML + PDF [skip ci]" || true
               git push origin main || echo "⚠️  Push failed (may be normal if no changes)"
             fi
           fi

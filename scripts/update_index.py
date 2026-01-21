@@ -19,6 +19,8 @@ class HTMLMetadataExtractor(HTMLParser):
         self.in_h2 = False
         self.in_title = False
         self.img_count = 0
+        self.paragraphs = []
+        self.in_p = False
         
     def handle_starttag(self, tag, attrs):
         if tag == 'title':
@@ -27,6 +29,8 @@ class HTMLMetadataExtractor(HTMLParser):
             self.in_h1 = True
         elif tag == 'h2':
             self.in_h2 = True
+        elif tag == 'p':
+            self.in_p = True
         elif tag == 'img':
             self.img_count += 1
     
@@ -37,16 +41,24 @@ class HTMLMetadataExtractor(HTMLParser):
             self.in_h1 = False
         elif tag == 'h2':
             self.in_h2 = False
+        elif tag == 'p':
+            self.in_p = False
     
     def handle_data(self, data):
+        data = data.strip()
+        if not data:
+            return
+            
         if self.in_title:
-            self.title = data.strip()
+            self.title = data
         elif self.in_h1:
-            if data.strip():
-                self.h1_text = data.strip()
+            self.h1_text = data
         elif self.in_h2:
-            if data.strip() and len(self.h2_texts) < 5:
-                self.h2_texts.append(data.strip())
+            if len(self.h2_texts) < 10:
+                self.h2_texts.append(data)
+        elif self.in_p:
+            if len(self.paragraphs) < 5:
+                self.paragraphs.append(data)
 
 def extract_metadata(html_path):
     """Extract metadata from HTML file"""
@@ -57,50 +69,62 @@ def extract_metadata(html_path):
         parser = HTMLMetadataExtractor()
         parser.feed(html_content)
         
-        # Get file size
-        file_size_kb = os.path.getsize(html_path) / 1024
+        # Determine the best title/description
+        main_title = parser.h1_text or parser.title or Path(html_path).stem.replace('_', ' ').title()
         
-        # Extract methods and results from h2 tags
-        methods = []
-        results = []
-        for h2 in parser.h2_texts[:10]:
-            if 'PHƯƠNG PHÁP' in h2 or 'CÔNG THỨC' in h2 or 'TÍNH TOÁN' in h2:
-                methods.append(h2)
-            elif 'KẾT QUẢ' in h2 or 'KIỂM TRA' in h2:
-                results.append(h2)
+        # Summary description
+        summary = ""
+        if parser.paragraphs:
+            summary = parser.paragraphs[0]
+        elif parser.h2_texts:
+            summary = " • ".join(parser.h2_texts[:2])
+            
+        if not summary:
+            summary = "Báo cáo tính toán kỹ thuật"
         
+        # Logic for icons
+        icon = "📊"
+        lower_title = main_title.lower()
+        if "beam" in lower_title or "dầm" in lower_title:
+            icon = "📏"
+        elif "column" in lower_title or "cột" in lower_title:
+            icon = "🏛️"
+        elif "slab" in lower_title or "sàn" in lower_title:
+            icon = "🧱"
+        elif "mesh" in lower_title:
+            icon = "🕸️"
+        elif "pi" in lower_title or "monte" in lower_title:
+            icon = "🎲"
+        elif "section" in lower_title:
+            icon = "📐"
+        elif parser.img_count > 0:
+            icon = "📈"
+
         return {
-            'title': parser.title or parser.h1_text or 'Report',
-            'file_size': f"{file_size_kb:.1f}KB",
-            'images': parser.img_count,
-            'has_charts': parser.img_count > 0,
-            'methods': methods[:2],
-            'results': results[:2],
-            'h2_list': parser.h2_texts[:5]
+            'title': main_title,
+            'description': summary,
+            'icon': icon,
+            'has_charts': parser.img_count > 0
         }
     except Exception as e:
         print(f"Error extracting metadata from {html_path}: {e}")
-        return {'title': 'Report', 'file_size': '0KB', 'images': 0, 'has_charts': False}
-
-def get_pdf_size(pdf_path):
-    """Get PDF file size"""
-    try:
-        if os.path.exists(pdf_path):
-            return f"{os.path.getsize(pdf_path) / 1024:.1f}KB"
-    except:
-        pass
-    return "0KB"
+        return {
+            'title': Path(html_path).stem,
+            'description': 'Báo cáo kỹ thuật',
+            'icon': '📄',
+            'has_charts': False
+        }
 
 # Create output directories if needed
 for dir_name in [output_dir, pdf_dir]:
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
 
-# Get list of HTML files with metadata
+# Get list of HTML files
 html_files = sorted([f for f in os.listdir(output_dir) if f.endswith('.html')])
 reports = []
 
-for idx, filename in enumerate(html_files, 1):
+for filename in html_files:
     filepath = os.path.join(output_dir, filename)
     metadata = extract_metadata(filepath)
     
@@ -110,148 +134,213 @@ for idx, filename in enumerate(html_files, 1):
     pdf_filename = f"{report_name}.pdf"
     pdf_path = os.path.join(pdf_dir, pdf_filename)
     has_pdf = os.path.exists(pdf_path)
-    pdf_size = get_pdf_size(pdf_path) if has_pdf else "0KB"
-    
-    # Build description
-    description_parts = []
-    if metadata['methods']:
-        description_parts.append(f"📐 {metadata['methods'][0]}")
-    if metadata['results']:
-        description_parts.append(f"📊 {metadata['results'][0]}")
-    if metadata['has_charts']:
-        description_parts.append("📈 Có biểu đồ")
-    
-    description = " • ".join(description_parts) if description_parts else "Báo cáo tính toán"
     
     reports.append({
-        'index': idx,
         'filename': filename,
         'pdf_filename': pdf_filename if has_pdf else None,
-        'name': report_name,
         'title': metadata['title'],
-        'size': metadata['file_size'],
-        'pdf_size': pdf_size,
-        'has_pdf': has_pdf,
-        'has_charts': metadata['has_charts'],
-        'description': description,
-        'sections': metadata['h2_list']
+        'description': metadata['description'],
+        'icon': metadata['icon'],
+        'has_pdf': has_pdf
     })
 
-# Generate table rows with description + links (no sizes)
+# Generate table rows
 links_html = ""
 if reports:
     for report in reports:
-        icon = "📈" if report.get('has_charts') else "📄"
-        desc = report['description'] if report['description'] else report['title']
+        pdf_link = f'<a href="cpdpdf/{report["pdf_filename"]}" class="btn-pdf">📕 PDF</a>' if report['has_pdf'] else '<span class="no-pdf">📕 (N/A)</span>'
+        
         links_html += f"""            <tr>
-                <td style=\"padding:12px 10px; vertical-align:top;\">
-                    <div style=\"font-size:1.5em; font-weight:700; display:flex; gap:10px; align-items:flex-start;\">
-                        <span>{icon}</span>
-                        <span>{report['title']}</span>
-                    </div>
-                    <div style=\"color:#7f8c8d; margin-top:6px;\">{desc}</div>
+                <td class="col-desc">
+                    <div class="report-title">{report['icon']} {report['title']}</div>
+                    <div class="report-summary">{report['description']}</div>
                 </td>
-                <td style=\"padding:12px 10px; vertical-align:top;\">
-                    <a href=\"cpdoutput/{report['filename']}\" style=\"font-size:1.1em; font-weight:600;\">📄 HTML</a>
+                <td class="col-link">
+                    <a href="cpdoutput/{report['filename']}" class="btn-html">🌐 HTML</a>
                 </td>
-                <td style=\"padding:12px 10px; vertical-align:top;\">
-                    {f'<a href="cpdpdf/{report["pdf_filename"]}" style="font-size:1.1em; font-weight:600;">📕 PDF</a>' if report['has_pdf'] else '<span style="color:#bdc3c7;">📕 PDF</span>'}
+                <td class="col-link">
+                    {pdf_link}
                 </td>
             </tr>
 """
 else:
-    links_html = "            <tr><td colspan=\"3\" style=\"padding:12px 10px;\">Chưa có báo cáo nào.</td></tr>"
+    links_html = '            <tr><td colspan="3" style="padding:40px; text-align:center; color:#95a5a6;">Chưa có báo cáo nào được tạo.</td></tr>'
 
 # Create/update calcpad.html
 template = f"""<!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
-    <title>HydrostructAI - Calcpad Reports</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydrostructAI - Calcpad Engineering Reports</title>
     <style>
+        :root {{
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }}
         body {{ 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
             margin: 0; 
-            padding: 40px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
+            padding: 20px;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
         }}
         .container {{
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
+            max-width: 1100px;
+            margin: 40px auto;
+            background: var(--card-bg);
             padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }}
+        header {{
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
         }}
         h1 {{ 
-            color: #2c3e50; 
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
+            margin: 0;
+            color: var(--text-main);
+            font-size: 2rem;
+            font-weight: 800;
         }}
-        .report-count {{
-            color: #7f8c8d;
-            font-size: 0.95em;
-            margin-bottom: 20px;
+        .stats {{
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }}
         table {{
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
         }}
-        thead th {{
+        th {{
             text-align: left;
-            padding: 12px 10px;
-            color: #2c3e50;
-            border-bottom: 2px solid #ecf0f1;
-            font-size: 0.95em;
+            padding: 15px;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
         }}
-        tbody tr:nth-child(even) {{ background: #f8f9fa; }}
-        tbody tr:hover {{
-            background: #ecf0f1;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            transform: translateX(4px);
+        tr {{
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
         }}
-        a {{ 
-            text-decoration: none; 
-            color: #3498db; 
-            font-weight: bold;
-            transition: color 0.3s ease;
+        tr:hover {{
+            background-color: #f8fafc;
         }}
-        a:hover {{ 
-            color: #2980b9;
-            text-decoration: underline;
+        td {{
+            padding: 20px 15px;
+            vertical-align: middle;
         }}
+        .col-desc {{ width: 60%; }}
+        .col-link {{ width: 20%; text-align: center; }}
+        
+        .report-title {{
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+        .report-summary {{
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }}
+        
+        .btn-html, .btn-pdf {{
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }}
+        .btn-html {{
+            background: #eff6ff;
+            color: #1d4ed8;
+        }}
+        .btn-html:hover {{
+            background: #dbeafe;
+        }}
+        .btn-pdf {{
+            background: #fff1f2;
+            color: #e11d48;
+        }}
+        .btn-pdf:hover {{
+            background: #ffe4e6;
+        }}
+        .no-pdf {{
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }}
+        
         .footer {{
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ecf0f1;
-            color: #7f8c8d;
-            font-size: 0.9em;
+            margin-top: 50px;
             text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }}
+        .footer a {{
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }}
+        
+        @media (max-width: 768px) {{
+            .container {{ padding: 20px; }}
+            .report-title {{ font-size: 1.2rem; }}
+            th, td {{ padding: 10px; }}
         }}
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Danh sách báo cáo kỹ thuật</h1>
-        <div class="report-count">Tổng cộng: <strong>{len(reports)}</strong> báo cáo | Cập nhật: {datetime.now().strftime('%d/%m/%Y %H:%M')}</div>
+        <header>
+            <div>
+                <h1>📊 Engineering Calc Reports</h1>
+                <div class="stats">HydrostructAI Engineering Excellence</div>
+            </div>
+            <div style="text-align: right;">
+                <strong style="font-size: 1.2em;">{len(reports)}</strong> items<br>
+                <small>Updated: {datetime.now().strftime('%d/%m/%Y %H:%M')}</small>
+            </div>
+        </header>
+        
         <table>
             <thead>
                 <tr>
-                    <th style="width:60%;">Nội dung tính toán</th>
-                    <th style="width:20%;">HTML</th>
-                    <th style="width:20%;">PDF</th>
+                    <th>Nội dung tính toán</th>
+                    <th style="text-align: center;">Bản HTML</th>
+                    <th style="text-align: center;">Bản PDF</th>
                 </tr>
             </thead>
             <tbody>
 {links_html}            </tbody>
         </table>
+        
         <div class="footer">
-            <p>Calcpad Engineering Reports • <a href="https://hydrostructai.com" target="_blank">HydrostructAI</a> • Auto-generated by GitHub Actions</p>
-            <p style="font-size: 0.85em;">📄 HTML (interactive) | 📕 PDF (printable)</p>
+            <p>
+                Powered by <a href="https://calcpad.eu" target="_blank">Calcpad</a> & 
+                <a href="https://github.com/Proektsoftbg/Calcpad" target="_blank">Proektsoftbg</a>
+            </p>
+            <p>© {datetime.now().year} <a href="https://hydrostructai.com" target="_blank">HydrostructAI</a>. All rights reserved.</p>
         </div>
     </div>
 </body>
@@ -261,4 +350,4 @@ template = f"""<!DOCTYPE html>
 with open(index_file, "w", encoding="utf-8") as f:
     f.write(template)
 
-print(f"✅ Updated {index_file} with {len(reports)} reports")
+print(f"✅ Updated {index_file} successfully")
