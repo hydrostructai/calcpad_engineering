@@ -120,12 +120,24 @@ for dir_name in [output_dir, pdf_dir]:
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
 
-# Get list of HTML files
-html_files = sorted([f for f in os.listdir(output_dir) if f.endswith('.html')])
+# Get list of HTML files from cpdoutput directory
+try:
+    html_files = sorted([f for f in os.listdir(output_dir) if f.endswith('.html')])
+    print(f"Found {len(html_files)} HTML files in {output_dir}/")
+except FileNotFoundError:
+    print(f"❌ Error: Directory {output_dir}/ not found")
+    html_files = []
+
 reports = []
 
 for filename in html_files:
     filepath = os.path.join(output_dir, filename)
+    
+    if not os.path.exists(filepath):
+        print(f"⚠️  Skipping {filename} - file not found")
+        continue
+    
+    print(f"  📄 Processing: {filename}")
     metadata = extract_metadata(filepath)
     
     report_name = filename.replace(".html", "")
@@ -135,6 +147,11 @@ for filename in html_files:
     pdf_path = os.path.join(pdf_dir, pdf_filename)
     has_pdf = os.path.exists(pdf_path)
     
+    if has_pdf:
+        print(f"     ✓ Found matching PDF: {pdf_filename}")
+    else:
+        print(f"     ⚠ No PDF found for: {report_name}")
+    
     reports.append({
         'filename': filename,
         'pdf_filename': pdf_filename if has_pdf else None,
@@ -143,6 +160,8 @@ for filename in html_files:
         'icon': metadata['icon'],
         'has_pdf': has_pdf
     })
+
+print(f"\n📊 Total reports collected: {len(reports)}")
 
 # Generate table rows
 links_html = ""
