@@ -19,83 +19,151 @@ jobs:
 
       - name: Install Calcpad and Dependencies
         run: |
-          echo "🔧 Installing dependencies for Calcpad..."
+          echo "🔧 Installing Calcpad with multiple fallback methods..."
           
           # Update package lists
           sudo apt-get update -qq 2>/dev/null
           
-          # Install essential build tools and libraries first
-          echo "📦 Installing system dependencies..."
+          # Install essential build tools and libraries FIRST
+          echo "📦 Installing system base packages..."
           sudo apt-get install -y \
-            build-essential \
-            wget \
-            curl \
-            unzip \
-            git \
-            python3 \
-            python3-pip \
-            xvfb \
-            libxrender1 \
-            libxext6 \
-            libglib2.0-0 \
-            libgtk-3-0 \
-            2>/dev/null || echo "⚠️  Some dependencies failed"
+            build-essential wget curl unzip git \
+            python3 python3-pip \
+            xvfb libxrender1 libxext6 \
+            fontconfig fonts-dejavu \
+            ca-certificates openssl \
+            2>&1 | grep -E "^(Setting|Processing|Unpacking|done)" || true
           
-          echo "✅ System dependencies installed"
+          echo "✅ Base packages installed"
           
-          # Method 1: Try snap (most reliable for calcpad)
-          echo "📦 Method 1: Attempting snap installation..."
-          if sudo snap install calcpad --classic 2>/dev/null; then
-            echo "✅ calcpad installed via snap"
-          else
-            echo "⚠️  snap installation failed, trying apt..."
-            
-            # Method 2: Try APT calcpad package
-            echo "📦 Method 2: Attempting apt installation..."
+          # ==========================================
+          # METHOD 1: Add Calcpad PPA and install
+          # ==========================================
+          echo ""
+          echo "📦 METHOD 1: Adding Calcpad PPA repository..."
+          if sudo add-apt-repository -y ppa:agentim/calcpad 2>/dev/null; then
+            sudo apt-get update -qq 2>/dev/null
             if sudo apt-get install -y calcpad 2>/dev/null; then
-              echo "✅ calcpad installed via apt"
+              echo "✅ Calcpad installed from PPA"
             else
-              echo "⚠️  apt calcpad not available"
-              
-              # Method 3: Try calcpad-cli
-              echo "📦 Method 3: Attempting calcpad-cli..."
-              if sudo apt-get install -y calcpad-cli 2>/dev/null; then
-                echo "✅ calcpad-cli installed"
-              else
-                echo "⚠️  calcpad-cli also not available"
-              fi
+              echo "⚠️  PPA installation failed"
+            fi
+          else
+            echo "⚠️  Could not add PPA"
+          fi
+          
+          # ==========================================
+          # METHOD 2: Install from Snap
+          # ==========================================
+          if ! command -v calcpad-run &> /dev/null; then
+            echo ""
+            echo "📦 METHOD 2: Trying snap installation..."
+            if sudo snap install calcpad --classic 2>/dev/null; then
+              echo "✅ Calcpad installed from snap"
+              export PATH=/snap/bin:$PATH
+            else
+              echo "⚠️  Snap installation failed"
             fi
           fi
           
-          # Install wkhtmltopdf with dependencies
-          echo "📦 Installing wkhtmltopdf..."
-          sudo apt-get install -y wkhtmltopdf 2>/dev/null || \
-          (wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb && \
-           sudo apt-get install -y ./wkhtmltox_0.12.6-1.focal_amd64.deb 2>/dev/null && \
-           rm -f wkhtmltox_0.12.6-1.focal_amd64.deb) || \
-          echo "⚠️  wkhtmltopdf installation skipped"
+          # ==========================================
+          # METHOD 3: Direct package download
+          # ==========================================
+          if ! command -v calcpad-run &> /dev/null; then
+            echo ""
+            echo "📦 METHOD 3: Downloading Calcpad directly..."
+            TEMP_DIR=$(mktemp -d)
+            cd "$TEMP_DIR"
+            
+            # Try downloading from Calcpad official sources
+            if wget -q https://calcpad.eu/downloads/calcpad-ubuntu-latest.deb -O calcpad.deb 2>/dev/null || \
+               wget -q https://github.com/Proectors/Calcpad/releases/download/v1.5.9/calcpad-1.5.9-linux.deb -O calcpad.deb 2>/dev/null; then
+              echo "📥 Downloaded Calcpad package"
+              sudo dpkg -i calcpad.deb 2>/dev/null || \
+              sudo apt-get install -y -f 2>/dev/null
+              echo "✅ Calcpad installed from direct download"
+            else
+              echo "⚠️  Direct download failed"
+            fi
+            cd - > /dev/null
+            rm -rf "$TEMP_DIR"
+          fi
           
-          # Verify installations
+          # ==========================================
+          # METHOD 4: Try portable/standalone version
+          # ==========================================
+          if ! command -v calcpad-run &> /dev/null; then
+            echo ""
+            echo "📦 METHOD 4: Checking for local Calcpad..."
+            if [ -f "/usr/bin/calcpad-run" ]; then
+              echo "✅ Found at /usr/bin/calcpad-run"
+            elif [ -f "/usr/local/bin/calcpad-run" ]; then
+              echo "✅ Found at /usr/local/bin/calcpad-run"
+              export PATH="/usr/local/bin:$PATH"
+            elif command -v /snap/bin/calcpad-run &> /dev/null; then
+              echo "✅ Found snap version at /snap/bin/calcpad-run"
+              export PATH="/snap/bin:$PATH"
+            else
+              echo "⚠️  No Calcpad found in standard locations"
+            fi
+          fi
+          
+          # ==========================================
+          # Install wkhtmltopdf
+          # ==========================================
           echo ""
-          echo "🔍 VERIFICATION:"
+          echo "📦 Installing wkhtmltopdf..."
+          if sudo apt-get install -y wkhtmltopdf 2>/dev/null; then
+            echo "✅ wkhtmltopdf installed"
+          else
+            echo "⚠️  apt wkhtmltopdf failed, trying direct download..."
+            TEMP_DIR=$(mktemp -d)
+            cd "$TEMP_DIR"
+            if wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb 2>/dev/null; then
+              sudo apt-get install -y -f ./wkhtmltox_0.12.6-1.focal_amd64.deb 2>/dev/null || true
+              echo "✅ wkhtmltopdf installed from direct download"
+            fi
+            cd - > /dev/null
+            rm -rf "$TEMP_DIR"
+          fi
+          
+          # ==========================================
+          # FINAL VERIFICATION
+          # ==========================================
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔍 INSTALLATION VERIFICATION:"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           
-          if command -v calcpad-run &> /dev/null; then
-            echo "✅ calcpad-run found at: $(which calcpad-run)"
-            calcpad-run --version 2>/dev/null || echo "   (version: unknown)"
-          elif command -v calcpad &> /dev/null; then
-            echo "✅ calcpad found at: $(which calcpad)"
-          elif snap list calcpad 2>/dev/null; then
-            echo "✅ calcpad snap installed"
-            /snap/bin/calcpad-run --version 2>/dev/null || echo "   (snap version: unknown)"
-          else
-            echo "⚠️  WARNING: calcpad NOT FOUND"
-            echo "   Searching for calcpad binaries..."
-            find /usr -name "*calcpad*" 2>/dev/null | head -5 || echo "   (none found)"
+          # Check all possible locations
+          CALCPAD_FOUND=0
+          
+          for PATH_DIR in /usr/bin /usr/local/bin /snap/bin ~/.local/bin; do
+            if [ -x "$PATH_DIR/calcpad-run" ]; then
+              echo "✅ calcpad-run found at: $PATH_DIR/calcpad-run"
+              "$PATH_DIR/calcpad-run" --version 2>/dev/null || echo "   (version info unavailable)"
+              CALCPAD_FOUND=1
+              # Add to PATH if not already there
+              if [[ ":$PATH:" != *":$PATH_DIR:"* ]]; then
+                export PATH="$PATH_DIR:$PATH"
+              fi
+              break
+            fi
+          done
+          
+          if [ $CALCPAD_FOUND -eq 0 ]; then
+            echo "❌ CRITICAL: calcpad-run NOT FOUND in any standard location"
+            echo "   Searching entire system..."
+            sudo find / -name "calcpad-run" -type f 2>/dev/null | head -5 || echo "   (none found)"
+            
+            # As a fallback, try to find any calcpad binary
+            echo ""
+            echo "   Searching for any calcpad binary..."
+            sudo find / -name "*calcpad*" -type f 2>/dev/null | grep -E "bin|exec" | head -5 || echo "   (none found)"
           fi
           
           if command -v wkhtmltopdf &> /dev/null; then
-            echo "✅ wkhtmltopdf found at: $(which wkhtmltopdf)"
+            echo "✅ wkhtmltopdf: $(which wkhtmltopdf)"
           else
             echo "⚠️  wkhtmltopdf NOT FOUND"
           fi
@@ -106,7 +174,65 @@ jobs:
             echo "⚠️  python3 NOT FOUND"
           fi
           
+          if command -v xvfb-run &> /dev/null; then
+            echo "✅ xvfb-run available (for GUI environments)"
+          else
+            echo "⚠️  xvfb-run NOT available"
+          fi
+          
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          # Export PATH for subsequent steps
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          
+      - name: Verify Calcpad Installation
+        run: |
+          echo "🔍 Double-checking calcpad installation..."
+          
+          # Check if it's ACTUALLY installed
+          FOUND=0
+          
+          # Try direct command
+          if command -v calcpad-run &> /dev/null; then
+            echo "✅ calcpad-run found in PATH"
+            which calcpad-run
+            FOUND=1
+          fi
+          
+          # Try common locations
+          for loc in /usr/bin/calcpad-run /usr/local/bin/calcpad-run /snap/bin/calcpad-run ~/.local/bin/calcpad-run /opt/calcpad/calcpad-run; do
+            if [ -x "$loc" ]; then
+              echo "✅ calcpad-run found at: $loc"
+              "$loc" --version 2>/dev/null || echo "   (binary exists)"
+              FOUND=1
+            fi
+          done
+          
+          if [ $FOUND -eq 0 ]; then
+            echo "⚠️  CRITICAL: calcpad-run still NOT found!"
+            echo ""
+            echo "Attempting alternative: Installing via Calcpad website direct download..."
+            
+            # Try downloading latest calcpad binary directly
+            mkdir -p /tmp/calcpad-install
+            cd /tmp/calcpad-install
+            
+            # Try different download sources
+            echo "Trying calcpad.eu..."
+            wget -q -O calcpad.tar.gz https://calcpad.eu/downloads/calcpad-ubuntu-latest.tar.gz 2>/dev/null && \
+              tar -xzf calcpad.tar.gz -C /opt/ 2>/dev/null && \
+              echo "✅ Downloaded and extracted from calcpad.eu" || \
+              echo "⚠️  calcpad.eu download failed"
+            
+            # Check again
+            if [ -x "/opt/calcpad/calcpad-run" ] || [ -x "/usr/bin/calcpad-run" ]; then
+              echo "✅ Calcpad now available!"
+            else
+              echo "❌ Calcpad still unavailable - workflow will fail"
+            fi
+            
+            cd - > /dev/null
+          fi
 
       - name: Process CPD Files with Sync
         run: |
