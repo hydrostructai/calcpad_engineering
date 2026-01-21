@@ -1,0 +1,27 @@
+# Calcpad Engineering Build Artifacts
+# These are auto-generated and will be recreated by GitHub Actions
+
+# CPD intermediate files
+cpdinput/*.html
+cpdinput/*.txt
+
+# Optional: uncomment if you want to exclude large PDFs from version control
+# cpdpdf/*.pdf
+
+# System and IDE files
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.pyc
+__pycache__/
+
+# Python
+.env
+venv/
+env/
+
+# Local test files
+.localhost/
