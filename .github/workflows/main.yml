@@ -18,80 +18,91 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Dependencies
+        continue-on-error: true
         run: |
           echo "🔧 Installing base dependencies..."
-          sudo apt-get update -qq
-          sudo apt-get install -y \
-            git python3 python3-pip \
-            wkhtmltopdf wget curl \
-            xvfb libxrender1 libxext6 \
-            docker.io
-          echo "✅ Base dependencies installed"
+          sudo apt-get update -qq || true
+          
+          # Install packages one by one to identify failures
+          for pkg in git python3 python3-pip xvfb libxrender1 libxext6 docker.io; do
+            echo "  Installing $pkg..."
+            sudo apt-get install -y "$pkg" 2>/dev/null && echo "  ✅ $pkg" || echo "  ⚠️  $pkg failed (continuing...)"
+          done
+          
+          # wkhtmltopdf might fail, so handle separately
+          echo "  Installing wkhtmltopdf..."
+          if sudo apt-get install -y wkhtmltopdf 2>/dev/null; then
+            echo "  ✅ wkhtmltopdf"
+          else
+            echo "  ⚠️  wkhtmltopdf (will try direct download later)"
+            
+            # Try direct download
+            TEMP_DIR=$(mktemp -d)
+            cd "$TEMP_DIR"
+            if wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb 2>/dev/null; then
+              sudo apt-get install -y -f ./wkhtmltox_0.12.6-1.focal_amd64.deb 2>/dev/null && echo "  ✅ wkhtmltopdf (from direct download)" || echo "  ⚠️  wkhtmltopdf installation failed"
+            fi
+            cd - > /dev/null
+            rm -rf "$TEMP_DIR"
+          fi
+          
+          echo "✅ Dependencies installation completed (some may have failed, but continuing...)"
 
       - name: Setup Calcpad (Docker Priority)
+        continue-on-error: true
         run: |
           echo "🐳 Setting up Calcpad with Docker..."
           
-          # Try 1: Docker image
+          # Try 1: Docker image (PRIMARY METHOD)
           echo "📦 Attempting Docker image..."
-          if docker pull agentim/calcpad:latest 2>&1 | grep -q "Pulling\|Downloaded\|Digest"; then
-            echo "✅ Docker image available!"
-            echo "CALCPAD_USE_DOCKER=true" >> $GITHUB_ENV
+          if command -v docker &> /dev/null; then
+            if docker pull agentim/calcpad:latest 2>&1 | tail -3; then
+              echo "✅ Docker image available!"
+              # Mark Docker as the primary execution mode
+              CALCPAD_USE_DOCKER=true
+              echo "CALCPAD_USE_DOCKER=true" >> $GITHUB_ENV
+            else
+              echo "⚠️  Docker image not available"
+            fi
           else
-            echo "⚠️  Docker image not available, trying native installation..."
-            
-            # Try 2: Install from system packages
+            echo "⚠️  Docker command not found"
+          fi
+          
+          # Try 2: Native installation (FALLBACK)
+          # Only attempt native install if Docker is NOT available
+          if [ "${CALCPAD_USE_DOCKER:-}" != "true" ]; then
+            echo ""
             echo "📦 Attempting native installation..."
             
-            # Add PPA
+            # Try PPA
             if sudo add-apt-repository -y ppa:agentim/calcpad 2>/dev/null && \
                sudo apt-get update -qq 2>/dev/null && \
                sudo apt-get install -y calcpad 2>/dev/null; then
               echo "✅ Calcpad installed from PPA"
               echo "CALCPAD_INSTALLED=true" >> $GITHUB_ENV
             else
-              echo "⚠️  PPA installation failed"
+              echo "⚠️  PPA failed, trying snap..."
               
-              # Try 3: Snap
+              # Try snap
               if sudo snap install calcpad --classic 2>/dev/null; then
                 echo "✅ Calcpad installed from snap"
                 export PATH=/snap/bin:$PATH
                 echo "PATH=$PATH" >> $GITHUB_ENV
                 echo "CALCPAD_INSTALLED=true" >> $GITHUB_ENV
               else
-                echo "⚠️  Snap installation failed"
-                
-                # Try 4: Build from source
-                echo "📦 Building from source..."
-                mkdir -p /tmp/calcpad-build
-                cd /tmp/calcpad-build
-                
-                if git clone --depth 1 https://github.com/Proectors/Calcpad.git 2>/dev/null; then
-                  cd Calcpad
-                  
-                  # Try with dotnet
-                  if command -v dotnet &> /dev/null; then
-                    if dotnet build -c Release 2>&1 | grep -q "Build succeeded"; then
-                      echo "✅ Built from source successfully"
-                      echo "CALCPAD_BUILT_FROM_SOURCE=true" >> $GITHUB_ENV
-                    fi
-                  fi
-                fi
+                echo "⚠️  Both PPA and snap failed"
               fi
             fi
           fi
           
           echo ""
           echo "🔍 Calcpad Status:"
-          if [ "$CALCPAD_USE_DOCKER" = "true" ]; then
-            echo "✅ Using Docker"
-          elif [ "$CALCPAD_INSTALLED" = "true" ]; then
+          if [ "${CALCPAD_USE_DOCKER:-}" = "true" ]; then
+            echo "✅ Docker mode enabled"
+          elif [ "${CALCPAD_INSTALLED:-}" = "true" ]; then
             echo "✅ Native installation available"
-            command -v calcpad-run && echo "   Found at: $(which calcpad-run)"
-          elif [ "$CALCPAD_BUILT_FROM_SOURCE" = "true" ]; then
-            echo "✅ Built from source"
           else
-            echo "⚠️  No Calcpad method available - will attempt inline processing"
+            echo "⚠️  Calcpad not available (no Docker image, no native install)"
           fi
 
       - name: Process CPD Files
@@ -143,7 +154,7 @@ jobs:
               # ================================================
               # METHOD 1: Use Docker if available
               # ================================================
-              if [ "$CALCPAD_USE_DOCKER" = "true" ]; then
+              if [ "${CALCPAD_USE_DOCKER:-}" = "true" ]; then
                 echo "  🐳 Using Docker..."
                 if docker run --rm \
                   -v "$(pwd):/work" \
@@ -171,7 +182,9 @@ jobs:
                   echo "  ✅ Using snap: $CALCPAD_CMD"
                 else
                   CALCPAD_CMD=""
-                  echo "  ❌ calcpad-run not found"
+                  echo "  ⚠️  calcpad-run not available on this runner (no native install). Skipping HTML generation for this file."
+                  # Skip to next file instead of trying to run a non-existent binary
+                  continue
                 fi
                 
                 if [ -n "$CALCPAD_CMD" ]; then
