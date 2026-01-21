@@ -96,7 +96,7 @@ def extract_metadata(html_path):
         # MANUAL OVERRIDES for cleaner presentation
         filename = Path(html_path).name
         overrides = {
-            'Flat Slab FEA Optimized.html': 'Finite Element Analysis of Flat Slab',
+            'Flat Slab FEA Optimized.html': 'Finite Element Analysis of Flat Slab - Optimized',
             'Flat Slab FEA.html': 'Finite Element Analysis of Flat Slab',
             'I section properties.html': 'Design of steel I section beam',
             'Monte-Carlo-Pi.html': 'Calculation of π by Monte-Carlo algorithm',
