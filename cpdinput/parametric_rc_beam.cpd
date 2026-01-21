@@ -1,0 +1,186 @@
+"Vẽ 3D dầm bê tông cốt thép - Tính toán mô men uốn theo EC2
+'<h3>I. HÌNH HỌC DẦM</h3>
+'Chiều dài dầm -'l = 6m
+'Chiều rộng thân dầm -'b = 250mm', chiều cao -'h = 800mm
+'Chiều rộng mặt trên -'b_f = 1000mm', chiều cao mặt trên -'h_f = 140mm
+'Đường kính cốt thép -'Ø = 22mm', Lớp bảo vệ -'c_nom = 50mm
+#post
+'Chiều sâu hiệu dụng:'d = h - c_nom - Ø/2'mm
+'<h3>II. CỐT THÉP VÀ VẬT LIỆU</h3>
+'Số lượng cốt thép thớ trên: 6 thanh Ø'Ø'mm
+A_one = π/4*Ø^2
+'Diện tích một thanh: A_one = 'A_one
+A_s_top = 6*A_one
+'Diện tích cốt thép thớ trên: A_s,top = 'A_s_top
+'Cốt thép thớ dưới: 2 thanh Ø'Ø'mm
+A_s_bot = 2*A_one
+'Diện tích cốt thép thớ dưới: A_s,bot = 'A_s_bot
+#post
+'<h4>Vật liệu theo EC2</h4>
+'<p class="ref">[EN 1992-1-1: 2004]</p>
+'Cấp bê tông: C25 (f_ck = 25 MPa)
+f_ck = 25'MPa
+'Cấp thép: B500 (f_yk = 500 MPa)
+f_yk = 500'MPa
+'Hệ số an toàn bê tông: γ_c = 1.5
+γ_c = 1.5
+'Hệ số an toàn thép: γ_s = 1.15
+γ_s = 1.15
+#post
+'Cường độ thiết kế bê tông:
+f_cd = f_ck/γ_c
+'f_cd = 'f_cd' MPa
+'
+'Cường độ thiết kế thép:
+f_yd = f_yk/γ_s
+'fyd = 'f_yd' MPa
+#val
+'<h3>III. TÍNH TOÁN MÔ MEN UỐN GIỚI HẠN THEO EC2</h3>
+'<p class="ref">[EN 1992-1-1 § 6.1.1]</p>
+'<p>
+#hide
+rho = A_s_top/(b*d)
+#show
+'Tỷ lệ cốt thép thớ trên: ρ = 'rho
+'</p>
+'<p class="ref">[EN 1992-1-1 § 6.1.3.1 - Các tính toán cho mặt cắt chữ T]</p>
+'<p>Công thức gần đúng (giả sử h < 1.25*d):</p>
+'<p>
+#hide
+M_Rd = 0.87*rho*f_yd*b*d^2*10^-6
+#show
+'Mô men uốn giới hạn: M_Rd = 'M_Rd' kN·m
+'</p>
+'<p>
+#hide
+K = M_Rd/(b*d^2*f_yd*10^-6)
+#show
+'Hệ số K = 'K
+'</p>
+
+#hide
+'<h3>IV. PHÂN BỐ CỐT THÉP THỚ TRÊN</h3>
+'
+'<p>
+'Các cốt thép được phân bố đều trên mặt rộng b_f = 'b_f' mm
+'</p>
+spacing = (b_f - 2*c_nom)/5
+'<p>Khoảng cách giữa các thanh: spacing = 'spacing' mm</p>
+'
+'<p>Vị trí các thanh từ trái sang phải:</p>
+x_1 = c_nom
+x_2 = c_nom + spacing
+x_3 = c_nom + 2*spacing
+x_4 = c_nom + 3*spacing
+x_5 = c_nom + 4*spacing
+x_6 = c_nom + 5*spacing
+'<ul>
+'<li>x₁ = 'x_1' mm</li>
+'<li>x₂ = 'x_2' mm</li>
+'<li>x₃ = 'x_3' mm</li>
+'<li>x₄ = 'x_4' mm</li>
+'<li>x₅ = 'x_5' mm</li>
+'<li>x₆ = 'x_6' mm</li>
+'</ul>
+'
+'<h3>V. PHÂN BỐ CỐT THÉP THỚ DƯỚI</h3>
+'
+'<p>Các cốt thép được phân bố đều trên chiều rộng thân dầm b = 'b' mm</p>
+'
+spacing_bot = (b - 2*c_nom)/1
+x_bot_1 = c_nom
+x_bot_2 = b - c_nom
+'<p>Khoảng cách giữa 2 thanh thép thớ dưới: spacing_bot = 'spacing_bot' mm</p>
+'
+'<p>Vị trí các thanh từ trái sang phải:</p>
+'<ul>
+'<li>x_bot₁ = 'x_bot_1' mm</li>
+'<li>x_bot₂ = 'x_bot_2' mm</li>
+'</ul>
+'
+#show
+'<div id="beam-3d-view" style="position: relative; width: 700px; height: 350px; margin: 10px auto; border: 1px solid #ddd;"></div>
+'<p style="text-align: center;"><small>3D Drawing: Nhấn và kéo chuột để quay, cuộn để phóng to/thu nhỏ.</small></p>
+'<script src="https://cdn.jsdelivr.net/npm/three@0.145/build/three.min.js"></script>
+'<script src="https://cdn.jsdelivr.net/npm/three@0.145/examples/js/controls/OrbitControls.js"></script>
+'<script>
+'window.addEventListener("DOMContentLoaded", () => {
+'if (typeof THREE === "undefined"|| typeof THREE.OrbitControls === "undefined") {
+'alert("Failed to load Three.js or OrbitControls.");
+'return;
+'}
+'const l = 'l/m'; 
+'const b = 'b/m'; const h = 'h/m';
+'const bf = 'b_f/m'; const hf = 'h_f/m';
+'const scene = new THREE.Scene();
+'scene.background = new THREE.Color(0xffffff);
+'const camera = new THREE.PerspectiveCamera(50, 2, 0.1*l, 2*l);
+'camera.position.set(1.2*bf, 1.3*h, 0.7*l);
+'camera.lookAt(0, 0, 0);
+'const renderer = new THREE.WebGLRenderer({antialias: true});
+'renderer.setSize(700, 350);
+'const container = document.getElementById("beam-3d-view");
+'container.appendChild(renderer.domElement);
+'const controls = new THREE.OrbitControls(camera, renderer.domElement);
+'controls.target.set(0, 0, 0);
+'controls.update();
+'const light = new THREE.DirectionalLight(0xffffff, 1);
+'light.position.set(-4, 8, 10);
+'scene.add(light);
+'scene.add(new THREE.AmbientLight(0xffffff));
+'const shape = new THREE.Shape();
+'shape.moveTo(-bf/2, 0);
+'shape.lineTo(bf/2, 0);
+'shape.lineTo(bf/2, -hf);
+'shape.lineTo(b/2, -hf);
+'shape.lineTo(b/2, -h);
+'shape.lineTo(-b/2, -h);
+'shape.lineTo(-b/2, -hf);
+'shape.lineTo(-bf/2, -hf);
+'shape.lineTo(-bf/2, 0);
+'const extrude = new THREE.ExtrudeGeometry(shape, { depth: l, bevelEnabled: false });
+'extrude.translate(0, h, -l/2);
+'const textureLoader = new THREE.TextureLoader();
+'const concreteTexture = textureLoader.load("https://cdn.polyhaven.com/asset_img/primary/concrete_layers_02.png?height=760&quality=95");
+'concreteTexture.wrapS = THREE.RepeatWrapping;
+'concreteTexture.wrapT = THREE.RepeatWrapping;
+'concreteTexture.repeat.set(4, 2);
+'const concreteMaterial = new THREE.MeshStandardMaterial({
+'map: concreteTexture, roughness: 1, metalness: 0.1, transparent: true, opacity:0.9}); 
+'const beam = new THREE.Mesh(extrude, concreteMaterial);
+'scene.add(beam);
+'const r = 'Ø/2/m';
+'const geometry = new THREE.CylinderGeometry(r, r, 1.04*l, 16);
+'geometry.rotateX(Math.PI / 2);
+'const steelMaterial = new THREE.MeshStandardMaterial({
+'color: 0xff0000,
+'metalness: 0.8,
+'roughness: 0.4
+'});
+'const c = 'c_nom/m';
+'const yb_top = h - c - r;
+'const spacing = (bf - 2*c) / 5;
+'const xb_top = [];
+'for(let i = 0; i < 6; i++) {
+'xb_top.push(-bf/2 + c + i*spacing);
+'}
+'const xb_bot = [-b/2 + c, b/2 - c];
+'const yb_bot = c;
+'var rebar = new THREE.Mesh(geometry, steelMaterial);
+'for(let i = 0; i < 6; i++){
+'rebar.position.set(xb_top[i], yb_top, 0);
+'scene.add(rebar);
+'rebar = rebar.clone();
+'}
+'for(let i = 0; i < 2; i++){
+'rebar.position.set(xb_bot[i], yb_bot, 0);
+'scene.add(rebar);
+'rebar = rebar.clone();
+'}
+'function animate() {
+'requestAnimationFrame(animate);
+'renderer.render(scene, camera);
+'}
+'animate();
+'});
+'</script>
