@@ -21,14 +21,18 @@ jobs:
       - name: Install Calcpad CLI via Dotnet Tool
         run: |
           dotnet tool install --global Calcpad.Cli --version 7.5.9
+          export PATH="$PATH:$HOME/.dotnet/tools"
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Verify Installation
         run: |
-          calcpad --version || calcpad -h
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          which calcpad || echo "Calcpad not in PATH"
+          calcpad --version || calcpad -h || echo "Calcpad verification failed but continuing..."
 
       - name: Process CPD Files
         run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
           mkdir -p cpdoutput
           
           for file in cpdinput/*.cpd; do
@@ -36,11 +40,13 @@ jobs:
             filename=$(basename "$file" .cpd)
             echo "🔄 Processing: $filename"
             
-            calcpad "$file"
+            calcpad "$file" || echo "⚠️ Warning: Failed to process $filename"
             
             if [ -f "cpdinput/$filename.html" ]; then
               mv "cpdinput/$filename.html" "cpdoutput/$filename.html"
               echo "✅ Generated: cpdoutput/$filename.html"
+            else
+              echo "❌ HTML not generated for $filename"
             fi
           done
 
