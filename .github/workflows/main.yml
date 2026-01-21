@@ -27,13 +27,13 @@ jobs:
           mkdir -p cpdoutput
           cd /home/runner/work/calcpad_engineering/calcpad_engineering
           
-          for file in cpdinput/*.cpd; do
+          find cpdinput -maxdepth 1 -name "*.cpd" -type f | while IFS= read -r file; do
             [ -e "$file" ] || continue
             filename=$(basename "$file" .cpd)
             echo "🔄 Processing: $filename"
             
-            # Use calcpad-run wrapper script
-            bash /usr/local/bin/calcpad-run "$file" || {
+            # Use calcpad-run wrapper script with proper quoting
+            bash /usr/local/bin/calcpad-run "$file" 2>&1 || {
               echo "⚠️ Warning: Failed to process $filename"
               continue
             }
