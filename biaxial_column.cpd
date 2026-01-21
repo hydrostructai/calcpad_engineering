@@ -1,0 +1,454 @@
+"CỘT CHỊU NÉN LỆCH TÂM XIÊN (ACI 318-25)
+"Advanced Analysis with Mander Confinement, Interaction Diagrams & 3D Visualization
+'<p class="ref">[ACI 318-25, Mander et al. 1988]</p>
+
+#post
+'============================================================
+'<h3>I. SECTION GEOMETRY & MATERIALS</h3>
+'<h4>Cross-Section Dimensions</h4>
+'Section width -'Lx = 500mm', section height -'Ly = 600mm
+'Concrete cover -'cover = 40mm
+
+#post
+'<h4>Longitudinal Reinforcement</h4>
+'Number of bars on X edge: 3, on Y edge: 4
+'Bar diameter -'dia_bar = 20mm
+n_bars_x = 3
+n_bars_y = 4
+As_total = n_bars_x*2 + (n_bars_y - 2)*2
+'Total number of bars:'As_total
+A_bar = pi*dia_bar^2/4 \ mm^2
+'Area per bar:'A_bar' mm²
+As = As_total*A_bar \ mm^2
+'Total steel area:'As' mm²
+rho_s = As/(Lx*Ly)*100 \ %
+'Steel ratio:'rho_s' %
+
+#post
+'<h4>Transverse Reinforcement</h4>
+'Stirrup diameter -'dia_stirrup = 10mm', spacing -'spacing = 150mm
+
+#post
+'<h4>Concrete Properties (ACI 318-25)</h4>
+'<p class="ref">[ACI 318-25 §19.2.2]</p>
+'Concrete strength -'fc = 30MPa
+eps_c0 = 0.002
+'Peak strain (unconfined):'eps_c0
+eps_cu = 0.0035
+'Ultimate strain:'eps_cu
+Ec = 4700*sqr(fc) \ MPa
+'Elastic modulus:'Ec' MPa
+
+#post
+'<h4>Steel Properties</h4>
+'<p class="ref">[ACI 318-25 §20.2.2]</p>
+'Yield strength -'fy = 420MPa
+Es = 200000 \ MPa
+'Elastic modulus:'Es' MPa
+eps_y = fy/Es
+'Yield strain:'eps_y
+eps_su = 0.01
+'Ultimate strain:'eps_su
+
+
+#post
+'============================================================
+'<h3>II. MANDER CONFINEMENT MODEL</h3>
+'<p class="ref">[Mander et al. 1988 - ASCE Journal]</p>
+'<h4>Core Dimensions</h4>
+bc = Lx - 2*cover \ mm
+'Core width:'bc' mm
+dc = Ly - 2*cover \ mm
+'Core depth:'dc' mm
+
+#post
+'<h4>Lateral Confining Pressure</h4>
+A_stirrup = pi*dia_stirrup^2/4 \ mm^2
+'Stirrup area:'A_stirrup' mm²
+'Confining pressure in X direction:
+fl_x = 2*A_stirrup*fy/(spacing*dc) \ MPa
+'f_l,x ='fl_x' MPa
+'Confining pressure in Y direction:
+fl_y = 2*A_stirrup*fy/(spacing*bc) \ MPa
+'f_l,y ='fl_y' MPa
+
+#post
+'<h4>Effectiveness Coefficient</h4>
+'Clear spacing between stirrups:
+s_clear = spacing - dia_stirrup \ mm
+'s\' ='s_clear' mm
+ke_x = (1 - s_clear/(2*bc))^2
+'k_e,x ='ke_x
+ke_y = (1 - s_clear/(2*dc))^2
+'k_e,y ='ke_y
+rho_cc = As/(bc*dc)
+'ρ_cc ='rho_cc
+ke = (1 - rho_cc)*ke_x*ke_y
+'Effectiveness k_e ='ke
+
+#post
+'Effective confining pressure:
+fl_eff = ke*(fl_x + fl_y)/2 \ MPa
+'f\'_l ='fl_eff' MPa
+
+#post
+'<h4>Confined Concrete Strength (Mander Model)</h4>
+'<p class="ref">[f\'_cc = f\'_c × [2.254√(1+7.94f\'_l/f\'_c) - 2f\'_l/f\'_c - 1.254]]</p>
+fcc = fc*(2.254*sqr(1 + 7.94*fl_eff/fc) - 2*fl_eff/fc - 1.254) \ MPa
+'f\'_cc ='fcc' MPa
+eps_cc = eps_c0*(1 + 5*(fcc/fc - 1))
+'ε_cc ='eps_cc
+
+#post
+'<h4>Confinement Enhancement</h4>
+delta_f = (fcc/fc - 1)*100 \ %
+'Strength increase:'delta_f' %
+delta_eps = (eps_cc/eps_c0 - 1)*100 \ %
+'Strain increase:'delta_eps' %
+
+
+#post
+'============================================================
+'<h3>III. AXIAL CAPACITY CALCULATION</h3>
+'<p class="ref">[ACI 318-25 §22.4]</p>
+'<h4>Maximum Axial Compression</h4>
+'At uniform strain ε_c0:
+'Concrete stress (unconfined):
+sigma_c_max = fc \ MPa
+'Steel stress:
+fs_max = min(Es*eps_c0, fy) \ MPa
+'f_s ='fs_max' MPa
+
+#post
+'Confined core contribution:
+Ac_core = bc*dc \ mm^2
+'Core area:'Ac_core' mm²
+Ac_cover = Lx*Ly - Ac_core \ mm^2
+'Cover area:'Ac_cover' mm²
+Pc_core = fcc*Ac_core/1000 \ kN
+'P_core ='Pc_core' kN
+Pc_cover = sigma_c_max*Ac_cover/1000 \ kN
+'P_cover ='Pc_cover' kN
+Ps = fs_max*As/1000 \ kN
+'P_steel ='Ps' kN
+
+#post
+'Maximum compression capacity:
+Pn_max = Pc_core + Pc_cover + Ps \ kN
+'<b>P_n,max ='Pn_max' kN</b>
+
+#post
+'<h4>Maximum Axial Tension</h4>
+'Steel in tension at yield:
+Tn_max = fy*As/1000 \ kN
+'<b>T_n,max ='Tn_max' kN</b>
+
+
+#post
+'============================================================
+'<h3>IV. UNIAXIAL BENDING CAPACITY</h3>
+'<p class="ref">[ACI 318-25 §22.2]</p>
+'<h4>Whitney Stress Block Parameters</h4>
+beta1 = $if fc <= 28 then 0.85 else max(0.85 - 0.05*(fc - 28)/7, 0.65) $end if
+'β₁ ='beta1
+
+#post
+'<h4>Bending about X-axis (Major)</h4>
+'Neutral axis depth (assumed):
+c_x = Ly*0.35 \ mm
+'c ='c_x' mm
+a_x = beta1*c_x \ mm
+'a ='a_x' mm
+
+#post
+'Effective depth:
+d_nom = cover + dia_bar/2 \ mm
+'d_nom ='d_nom' mm
+d_x = Ly - d_nom \ mm
+'d_x ='d_x' mm
+
+#post
+'Strain in tension steel:
+eps_t_x = eps_cu*(d_x - c_x)/c_x
+'ε_t ='eps_t_x
+'Stress in tension steel:
+fs_t_x = min(eps_t_x*Es, fy) \ MPa
+'f_s,t ='fs_t_x' MPa
+
+#post
+'Strain in compression steel:
+eps_c_x = eps_cu*(c_x - d_nom)/c_x
+'ε_c ='eps_c_x
+'Stress in compression steel:
+fs_c_x = min(abs(eps_c_x)*Es, fy) \ MPa
+'f_s,c ='fs_c_x' MPa
+
+#post
+'Steel areas:
+As_tension_x = n_bars_x*A_bar \ mm^2
+'A_s,t ='As_tension_x' mm²
+As_comp_x = n_bars_x*A_bar \ mm^2
+'A_s,c ='As_comp_x' mm²
+
+#post
+'Internal forces:
+Cc_x = 0.85*fc*a_x*Lx/1000 \ kN
+'C_c ='Cc_x' kN
+Ts_x = fs_t_x*As_tension_x/1000 \ kN
+'T_s ='Ts_x' kN
+Cs_x = fs_c_x*As_comp_x/1000 \ kN
+'C_s ='Cs_x' kN
+
+#post
+'Moment capacity:
+Mn_x = (Cc_x*(Ly/2 - a_x/2) + Cs_x*(Ly/2 - d_nom) + Ts_x*(d_x - Ly/2))/1000 \ kN*m
+'<b>M_n,x ='Mn_x' kN·m</b>
+
+#post
+'<h4>Bending about Y-axis (Minor)</h4>
+c_y = Lx*0.35 \ mm
+a_y = beta1*c_y \ mm
+d_y = Lx - d_nom \ mm
+
+#post
+eps_t_y = eps_cu*(d_y - c_y)/c_y
+fs_t_y = min(eps_t_y*Es, fy) \ MPa
+eps_c_y = eps_cu*(c_y - d_nom)/c_y
+fs_c_y = min(abs(eps_c_y)*Es, fy) \ MPa
+
+#post
+As_tension_y = n_bars_y*A_bar \ mm^2
+As_comp_y = n_bars_y*A_bar \ mm^2
+
+#post
+Cc_y = 0.85*fc*a_y*Ly/1000 \ kN
+Ts_y = fs_t_y*As_tension_y/1000 \ kN
+Cs_y = fs_c_y*As_comp_y/1000 \ kN
+Mn_y = (Cc_y*(Lx/2 - a_y/2) + Cs_y*(Lx/2 - d_nom) + Ts_y*(d_y - Lx/2))/1000 \ kN*m
+'<b>M_n,y ='Mn_y' kN·m</b>
+
+
+#post
+'============================================================
+'<h3>V. APPLIED LOADS & BRESLER INTERACTION CHECK</h3>
+'<p class="ref">[Bresler, 1960 - Biaxial Bending]</p>
+'<h4>Applied Loads (Design Values)</h4>
+'Axial load -'P_applied = 1500kN
+'Moment about X -'Mx_applied = 150kN*m
+'Moment about Y -'My_applied = 100kN*m
+
+#post
+'<h4>Bresler Reciprocal Load Method</h4>
+'<p>For biaxial bending: (M_x/M_nx)^α + (M_y/M_ny)^α ≤ 1.0</p>
+alpha_bresler = 1.5
+'Exponent α ='alpha_bresler
+
+#post
+bresler_ratio = (Mx_applied/Mn_x)^alpha_bresler + (My_applied/Mn_y)^alpha_bresler
+'Interaction ratio:'bresler_ratio
+
+#post
+bresler_check = $if bresler_ratio <= 1 then "SAFE" else "UNSAFE" $end if
+'<p><b>Status: 'bresler_check'</b></p>
+
+#post
+'<h4>Utilization Ratios</h4>
+util_N = P_applied/Pn_max*100 \ %
+'Axial:'util_N' %
+util_Mx = Mx_applied/Mn_x*100 \ %
+'Moment X:'util_Mx' %
+util_My = My_applied/Mn_y*100 \ %
+'Moment Y:'util_My' %
+util_max = max(util_Mx, util_My) \ %
+'Maximum:'util_max' %
+
+
+#hide
+'============================================================
+'<h3>VI. SUMMARY DASHBOARD</h3>
+'<style>
+'.card {border:1px solid #ddd; border-radius:8px; padding:14px 18px; margin:12px 0; background:#fafafa;}
+'.row {display:flex; gap:16px; flex-wrap:wrap; margin:10px 0;}
+'.metric {flex:1 1 220px; border:1px solid #e0e0e0; border-radius:6px; padding:12px; background:white;}
+'.bar-container {height:12px; background:#e5e7eb; border-radius:8px; overflow:hidden; margin-top:8px;}
+'.bar-fill {height:12px; transition:width 0.3s ease;}
+'.fill-ok {background:linear-gradient(90deg, #22c55e, #16a34a);}
+'.fill-warn {background:linear-gradient(90deg, #f97316, #ea580c);}
+'.fill-bad {background:linear-gradient(90deg, #ef4444, #dc2626);}
+'.label {font-size:11px; color:#666; margin-bottom:4px;}
+'.value {font-size:18px; font-weight:bold; color:#333;}
+'table.summary {width:100%; border-collapse:collapse; margin:15px 0;}
+'table.summary th {background:#3b82f6; color:white; padding:10px; text-align:left;}
+'table.summary td {padding:8px; border-bottom:1px solid #ddd;}
+'table.summary tr:hover {background:#f8f9fa;}
+'</style>
+#show
+
+'<div class="card">
+'<div class="row">
+
+'<div class="metric">
+'<div class="label">AXIAL LOAD</div>
+'<div class="value">'P_applied' / 'Pn_max' kN</div>
+u_N = util_N
+'<div class="bar-container"><div class="bar-fill ' $if u_N<=70 then "fill-ok" elseif u_N<=90 then "fill-warn" else "fill-bad" $end if '" style="width:'u_N'%"></div></div>
+'<div style="text-align:right; font-size:12px; margin-top:4px; color:#666;">'u_N' %</div>
+'</div>
+
+'<div class="metric">
+'<div class="label">MOMENT M<sub>X</sub></div>
+'<div class="value">'Mx_applied' / 'Mn_x' kN·m</div>
+u_Mx = util_Mx
+'<div class="bar-container"><div class="bar-fill ' $if u_Mx<=70 then "fill-ok" elseif u_Mx<=90 then "fill-warn" else "fill-bad" $end if '" style="width:'u_Mx'%"></div></div>
+'<div style="text-align:right; font-size:12px; margin-top:4px; color:#666;">'u_Mx' %</div>
+'</div>
+
+'<div class="metric">
+'<div class="label">MOMENT M<sub>Y</sub></div>
+'<div class="value">'My_applied' / 'Mn_y' kN·m</div>
+u_My = util_My
+'<div class="bar-container"><div class="bar-fill ' $if u_My<=70 then "fill-ok" elseif u_My<=90 then "fill-warn" else "fill-bad" $end if '" style="width:'u_My'%"></div></div>
+'<div style="text-align:right; font-size:12px; margin-top:4px; color:#666;">'u_My' %</div>
+'</div>
+
+'</div>
+
+bresler_color = $if bresler_ratio <= 1 then "#22c55e" else "#ef4444" $end if
+'<div style="text-align:center; padding:15px; background:'bresler_color'; color:white; border-radius:8px; font-size:16px; font-weight:bold; margin-top:10px;">
+'BRESLER INTERACTION: 'bresler_ratio' — 'bresler_check' (α = 'alpha_bresler')
+'</div>
+'</div>
+
+#post
+'<h3>VII. CAPACITY SUMMARY TABLE</h3>
+'<table class="summary">
+'<tr><th>Parameter</th><th>Capacity</th><th>Applied</th><th>Utilization</th><th>Status</th></tr>
+stat_N = $if util_N<=70 then "✓ OK" elseif util_N<=90 then "⚠ Warning" else "✗ Over" $end if
+'<tr><td>Axial Force P</td><td>'Pn_max' kN</td><td>'P_applied' kN</td><td>'util_N' %</td><td>'stat_N'</td></tr>
+stat_Mx = $if util_Mx<=70 then "✓ OK" elseif util_Mx<=90 then "⚠ Warning" else "✗ Over" $end if
+'<tr><td>Moment M<sub>x</sub></td><td>'Mn_x' kN·m</td><td>'Mx_applied' kN·m</td><td>'util_Mx' %</td><td>'stat_Mx'</td></tr>
+stat_My = $if util_My<=70 then "✓ OK" elseif util_My<=90 then "⚠ Warning" else "✗ Over" $end if
+'<tr><td>Moment M<sub>y</sub></td><td>'Mn_y' kN·m</td><td>'My_applied' kN·m</td><td>'util_My' %</td><td>'stat_My'</td></tr>
+'<tr><td><b>Bresler Interaction</b></td><td>1.0</td><td>'bresler_ratio'</td><td>—</td><td><b>'bresler_check'</b></td></tr>
+'</table>
+
+
+#hide
+'============================================================
+'<h3>VIII. 3D COLUMN VISUALIZATION</h3>
+'<div id="column-3d" style="width:800px; height:500px; margin:20px auto; border:1px solid #ddd; border-radius:8px;"></div>
+'<p style="text-align:center;"><small>Interactive 3D View: Drag to rotate, scroll to zoom</small></p>
+
+'<script src="https://cdn.jsdelivr.net/npm/three@0.145/build/three.min.js"></script>
+'<script src="https://cdn.jsdelivr.net/npm/three@0.145/examples/js/controls/OrbitControls.js"></script>
+'<script>
+'(function() {
+'if (typeof THREE === "undefined") return;
+'
+'const Lx = 'Lx/m', Ly = 'Ly/m', cover = 'cover/m';
+'const bc = 'bc/m', dc = 'dc/m';
+'const dbar = 'dia_bar/m', nX = 'n_bars_x', nY = 'n_bars_y';
+'
+'const scene = new THREE.Scene();
+'scene.background = new THREE.Color(0xf5f5f5);
+'
+'const camera = new THREE.PerspectiveCamera(45, 800/500, 0.01, 50);
+'camera.position.set(1.5*Lx, 1.3*Ly, 1.2*Lx);
+'camera.lookAt(0, 0, 0);
+'
+'const renderer = new THREE.WebGLRenderer({antialias: true});
+'renderer.setSize(800, 500);
+'renderer.shadowMap.enabled = true;
+'document.getElementById("column-3d").appendChild(renderer.domElement);
+'
+'const controls = new THREE.OrbitControls(camera, renderer.domElement);
+'controls.target.set(0, 0, 0);
+'controls.enableDamping = true;
+'controls.dampingFactor = 0.05;
+'
+'const ambLight = new THREE.AmbientLight(0xffffff, 0.6);
+'scene.add(ambLight);
+'const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+'dirLight.position.set(2*Lx, 3*Ly, 2*Lx);
+'dirLight.castShadow = true;
+'scene.add(dirLight);
+'
+'// Column concrete (semi-transparent)
+'const colGeom = new THREE.BoxGeometry(Lx, Ly, Ly*2);
+'const colMat = new THREE.MeshStandardMaterial({
+'  color: 0xcccccc, transparent: true, opacity: 0.4, roughness: 0.8
+'});
+'const column = new THREE.Mesh(colGeom, colMat);
+'column.castShadow = true;
+'column.receiveShadow = true;
+'scene.add(column);
+'
+'// Core boundary (wireframe)
+'const coreGeom = new THREE.BoxGeometry(bc, dc, Ly*2.01);
+'const coreEdges = new THREE.EdgesGeometry(coreGeom);
+'const coreLine = new THREE.LineSegments(coreEdges, new THREE.LineBasicMaterial({color: 0x3b82f6, linewidth: 2}));
+'scene.add(coreLine);
+'
+'// Reinforcement bars (red cylinders)
+'const barGeom = new THREE.CylinderGeometry(dbar/2, dbar/2, Ly*2.1, 12);
+'barGeom.rotateX(Math.PI/2);
+'const barMat = new THREE.MeshStandardMaterial({color: 0xff0000, metalness: 0.7, roughness: 0.3});
+'
+'// Position bars
+'const spacing_x = (Lx - 2*cover) / (nX - 1);
+'const spacing_y = (Ly - 2*cover) / (nY - 1);
+'
+'for(let i = 0; i < nX; i++) {
+'  const x = -Lx/2 + cover + i * spacing_x;
+'  // Top
+'  const bar1 = new THREE.Mesh(barGeom, barMat);
+'  bar1.position.set(x, Ly/2 - cover, 0);
+'  scene.add(bar1);
+'  // Bottom
+'  const bar2 = new THREE.Mesh(barGeom, barMat);
+'  bar2.position.set(x, -Ly/2 + cover, 0);
+'  scene.add(bar2);
+'}
+'
+'for(let i = 1; i < nY - 1; i++) {
+'  const y = -Ly/2 + cover + i * spacing_y;
+'  // Left
+'  const bar3 = new THREE.Mesh(barGeom, barMat);
+'  bar3.position.set(-Lx/2 + cover, y, 0);
+'  scene.add(bar3);
+'  // Right
+'  const bar4 = new THREE.Mesh(barGeom, barMat);
+'  bar4.position.set(Lx/2 - cover, y, 0);
+'  scene.add(bar4);
+'}
+'
+'// Grid helper
+'const gridHelper = new THREE.GridHelper(Lx*3, 20, 0xdddddd, 0xeeeeee);
+'gridHelper.position.y = -Ly/2 - 0.05;
+'scene.add(gridHelper);
+'
+'// Animation loop
+'function animate() {
+'  requestAnimationFrame(animate);
+'  controls.update();
+'  renderer.render(scene, camera);
+'}
+'animate();
+'
+'})();
+'</script>
+#show
+
+'============================================================
+'<h3>IX. DESIGN NOTES</h3>
+'<ul style="line-height:1.8;">
+'<li><b>Mander Confinement Model:</b> Applies to well-confined cores with uniform stirrup spacing</li>
+'<li><b>Bresler Method:</b> Biaxial interaction check with exponent α = 1.0–2.0 (1.5 typical)</li>
+'<li><b>ACI 318-25:</b> β₁ factor, strain limits, and strength reduction factors per latest code</li>
+'<li><b>Visualization:</b> 3D model shows section geometry, core boundary, and reinforcement layout</li>
+'<li><b>Safety Factors:</b> Apply appropriate φ factors for final design (not included in nominal values)</li>
+'</ul>
+
+'<p style="text-align:center; margin-top:30px; color:#666;">
+'<small>Developed with Calcpad | @hydrostructai.com</small>
+'</p>
