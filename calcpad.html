@@ -70,7 +70,10 @@
 <body>
     <div class="container">
         <h1>📊 Danh sách báo cáo kỹ thuật</h1>
-        <div class="report-count">Tổng cộng: <strong>4</strong> báo cáo | Cập nhật: 22/01/2026</div>
+        <div style="margin-bottom: 20px; padding: 12px; background: #e8f4f8; border-left: 4px solid #3498db; border-radius: 4px;">
+            <a href="https://hydrostructai.com/calcpad_engineering/" style="color: #2c3e50; font-weight: bold; text-decoration: none;">📖 Xem hướng dẫn Calcpad</a>
+        </div>
+        <div class="report-count">Tổng cộng: <strong id="report-count">4</strong> báo cáo | Cập nhật: 22/01/2026</div>
         <ul>
         <li>
             <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -154,5 +157,11 @@
             <p style="font-size: 0.85em;">📄 HTML (interactive) | 📕 PDF (printable)</p>
         </div>
     </div>
-</body>
-</html>
+    <script>
+        // Count the number of report links to make the total dynamic
+        document.addEventListener('DOMContentLoaded', function() {
+            const reportItems = document.querySelectorAll('li');
+            const reportCount = reportItems.length;
+            document.getElementById('report-count').textContent = reportCount;
+        });
+    </script>

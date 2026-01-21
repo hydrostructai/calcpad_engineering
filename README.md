@@ -1,492 +1,345 @@
-# Calcpad Engineering Reports
+# Calcpad - Hướng Dẫn Sử Dụng
 
-Automated structural engineering analysis and report generation using Calcpad with GitHub Actions CI/CD, dual HTML/PDF outputs, and custom domain hosting.
+Calcpad là công cụ tính toán kỹ thuật mạnh mẽ cho phép bạn viết các phép tính phức tạp dưới dạng văn bản và tự động tạo báo cáo chuyên nghiệp.
 
-**Website:** https://hydrostructai.com  
-
----
-
-## 📋 Quick Navigation
-
-- [Quick Start](#-quick-start) - Get started in 30 seconds
-- [Repository Structure](#-repository-structure) - Folder organization
-- [How It Works](#-how-it-works) - The automation pipeline
-- [Adding New Reports](#-adding-new-reports) - Create a new analysis
-- [Documentation](#-documentation) - Learn more
-- [Troubleshooting](#-troubleshooting) - Common issues
+**Website Calcpad:** https://www.calcpad.eu  
+**Báo cáo:** [Xem các báo cáo tại đây](https://hydrostructai.com/calcpad_engineering/)
 
 ---
 
-## 🚀 Quick Start
+## 📖 Giới thiệu Calcpad
 
-### View Existing Reports
-1. Visit: **https://hydrostructai.com/calcpad_engineering/calcpad.html**
-2. Click "📄 HTML" to view interactive report
-3. Click "📕 PDF" to download printable version
+### Calcpad là gì?
+Calcpad cho phép bạn:
+- ✅ Viết phương trình toán học dạng văn bản đơn giản
+- ✅ Tự động tính toán và hiển thị kết quả
+- ✅ Tạo báo cáo chuyên nghiệp (HTML + PDF)
+- ✅ Giữ lịch sử tính toán rõ ràng
+- ✅ Chia sẻ công việc dễ dàng qua file `.cpd`
 
-### Add New Report (3 Steps)
-```bash
-# 1. Create or copy .cpd file
-cp myanalysis.cpd calcpad_engineering/cpdinput/
-
-# 2. Push to GitHub
-cd calcpad_engineering
-git add cpdinput/myanalysis.cpd
-git commit -m "Add myanalysis"
-git push origin main
-
-# 3. Wait 1-2 minutes
-# → HTML generated automatically
-# → PDF generated automatically  
-# → Index updated automatically
-```
-
-Then visit: https://hydrostructai.com/calcpad_engineering/calcpad.html
+### Tại sao dùng Calcpad?
+- 📊 **Rõ ràng:** Mọi công thức và kết quả đều có thể nhìn thấy
+- 🔄 **Tái sử dụng:** Thay đổi giá trị đầu vào → kết quả tự động cập nhật
+- 📁 **Dễ lưu trữ:** Một file `.cpd` chứa mọi thứ
+- 🌐 **Chia sẻ:** Tạo HTML/PDF để gửi cho đồng nghiệp
+- ⚡ **Nhanh:** Viết công thức nhanh hơn Excel hoặc tính máy
 
 ---
 
-## 📁 Repository Structure
+## 🎯 Tính Năng Chính
 
-```
-calcpad_engineering/
-│
-├── cpdinput/                        # Input: Raw .cpd source files
-│   ├── test_workflow.cpd
-│   ├── biaxial_column.cpd
-│   └── [your .cpd files here]
-│
-├── cpdoutput/                       # Output: Generated HTML reports (interactive)
-│   ├── test_workflow.html
-│   ├── biaxial_column.html
-│   └── [auto-generated]
-│
-├── cpdpdf/                          # Output: Generated PDF reports (printable)
-│   ├── test_workflow.pdf
-│   ├── biaxial_column.pdf
-│   └── [auto-generated]
-│
-├── scripts/
-│   └── update_index.py              # Python script: generates calcpad.html index
-│
-├── .github/workflows/
-│   └── main.yml                     # GitHub Actions: automation workflow
-│
-├── calcpad.html                     # Main index page with report links
-├── README.md                        # This file
-├── PDF_GENERATION.md                # PDF feature documentation
-├── .gitignore                       # Git ignore patterns
-└── LICENSE                          # MIT License
-```
+| Tính Năng | Mô Tả |
+|-----------|-------|
+| **Biến số** | Khai báo biến và gán giá trị |
+| **Công thức** | Viết phương trình toán học |
+| **Đơn vị** | Tự động chuyển đổi đơn vị |
+| **Dự toán** | Kiểm tra kết quả với `=?` |
+| **Văn bản** | Thêm mô tả bằng dấu ngoặc kép `"..."` |
+| **Đồ thị** | Vẽ sơ đồ và biểu đồ |
+| **HTML/PDF** | Xuất báo cáo chuyên nghiệp |
 
 ---
 
-## ⚙️ How It Works
+## 🚀 Bắt Đầu Nhanh (5 Phút)
 
-### The Automation Pipeline
+### Bước 1: Tạo File `.cpd`
 
-```
-You push .cpd file to GitHub
-         ↓
-GitHub Actions Detects Change (triggers on cpdinput/*.cpd)
-         ↓
-Step 1: Install & Run Calcpad
-        $ calcpad cpdinput/file.cpd
-        → Generates: cpdinput/file.html
-         ↓
-Step 2: Move HTML to Output
-        $ mv cpdinput/file.html cpdoutput/file.html
-         ↓
-Step 3: Convert to PDF
-        $ wkhtmltopdf cpdoutput/file.html cpdpdf/file.pdf
-         ↓
-Step 4: Update Index
-        $ python3 scripts/update_index.py
-        → Generates: calcpad.html with all links
-         ↓
-Step 5: Auto-Commit & Push
-        $ git add cpdoutput/*.html cpdpdf/*.pdf calcpad.html
-        $ git commit -m "Auto-generate reports"
-        $ git push origin main
-         ↓
-GitHub Pages Deployed
-         ↓
-✨ Reports Live At:
-   https://hydrostructai.com/calcpad_engineering/calcpad.html
-```
-
-### What Gets Generated
-
-For each `.cpd` file pushed:
-
-| Output | Location | Format | Use Case |
-|--------|----------|--------|----------|
-| **HTML** | `cpdoutput/file.html` | Interactive web page | View in browser, embed in docs |
-| **PDF** | `cpdpdf/file.pdf` | Static document | Print, share, archive |
-| **Index** | `calcpad.html` | Landing page | Navigation hub for all reports |
-
----
-
-## ✨ Key Features
-
-### ✅ Automated Workflow
-- Push `.cpd` → Calcpad processes automatically
-- No manual build steps needed
-- GitHub Actions handles everything
-- Completes in ~2 minutes
-
-### ✅ Dual Format Output
-- **HTML:** Interactive plots, responsive design, lightweight
-- **PDF:** Print-optimized, downloadable, offline-compatible
-
-### ✅ Smart Index
-- Auto-generated from report metadata
-- Shows both HTML and PDF links
-- Displays file sizes
-- Updates instantly on new reports
-
-### ✅ GitHub Pages Hosting
-- Free static hosting
-- Custom domain support (hydrostructai.com)
-- HTTPS enabled automatically
-- Automatic updates on push
-
-### ✅ Version Control
-- All reports tracked in Git
-- Complete history preserved
-- Easy rollback
-- Collaborative editing
-
----
-
-## ➕ Adding New Reports
-
-### Step 1: Create Your Analysis
-
-Create a `.cpd` file using Calcpad Editor or text editor:
+Tạo file text tên `my_analysis.cpd` với nội dung:
 
 ```calcpad
-"Beam Analysis Report"
-L = 6 "Span (m)"
-P = 50 "Load (kN)"
-I = 0.005 "Inertia (m⁴)"
-M = P * L / 4
-M = ? "Moment (kNm)"
+"Báo cáo Phân tích Dầm"
+'Bước 1: Nhập dữ liệu
+L = 6 "Dài nhịp (m)"
+P = 50 "Tải trọng (kN)"
+I = 0.005 "Moment quán tính (m⁴)"
+
+'Bước 2: Tính toán
+M = P * L / 4 "Moment uốn (kNm)"
+σ = M / (I / 0.3) "Ứng suất (kPa)"
+
+'Bước 3: Kiểm tra kết quả
+M = ? "Moment uốn = ?"
+σ = ? "Ứng suất = ?"
 ```
 
-### Step 2: Save & Push
+### Bước 2: Chạy Calcpad
 
+**Trên Windows/Mac:**
+1. Mở Calcpad Editor
+2. File → Open → Chọn `my_analysis.cpd`
+3. Nhấn "Generate" hoặc Ctrl+G
+4. Xem kết quả tạo thành file `my_analysis.html`
+
+**Trên Linux/GitHub:**
 ```bash
-# Copy to input folder
-cp myanalysis.cpd /path/to/calcpad_engineering/cpdinput/
-
-# Navigate to repo
-cd /path/to/calcpad_engineering
-
-# Push to GitHub
-git add cpdinput/myanalysis.cpd
-git commit -m "Add myanalysis: Description here"
-git push origin main
+calcpad my_analysis.cpd
 ```
 
-### Step 3: Wait & Verify
-
-1. **Wait 1-2 minutes** for GitHub Actions to process
-2. **Check status:** https://github.com/hydrostructai/calcpad_engineering/actions
-3. **View results:** https://hydrostructai.com/calcpad_engineering/calcpad.html
-
-Your report should appear with both:
-- 📄 HTML link (interactive)
-- 📕 PDF link (downloadable)
+### Bước 3: Xem Kết Quả
+- ✅ File `my_analysis.html` được tạo
+- ✅ Mở trong trình duyệt để xem báo cáo
+- ✅ In hoặc lưu thành PDF
 
 ---
 
-## 🔄 GitHub Actions Workflow
+## 📝 Cú Pháp Calcpad Cơ Bản
 
-### Files & Permissions
+### 1. Khai Báo Biến
 
-**Workflow File:** `.github/workflows/main.yml`
-
-```yaml
-# Trigger: When .cpd files are pushed
-on:
-  push:
-    paths:
-      - 'cpdinput/*.cpd'
-
-# Permissions: Allow bot to commit
-permissions:
-  contents: write
-
-# Runner: Ubuntu latest with pre-installed tools
-jobs:
-  process-calcpad:
-    runs-on: ubuntu-latest
-    steps:
-      # ... runs Calcpad, generates HTML/PDF, updates index
+```calcpad
+L = 6              'Biến không có đơn vị
+L = 6 "m"          'Biến có đơn vị (mét)
+L = 6 "mm" = ? "m" 'Chuyển đổi đơn vị (từ mm sang m)
 ```
 
-### View Workflow Execution
+### 2. Phép Toán
 
-1. Go to: https://github.com/hydrostructai/calcpad_engineering/actions
-2. Click the latest workflow run
-3. Review logs for each step
-4. Check for errors or warnings
+```calcpad
+A = 5 + 3
+B = A * 2
+C = 10 / 5
+D = 2 ^ 3          'Lũy thừa (2³ = 8)
+E = √16            'Căn bậc hai
+```
 
----
+### 3. Văn Bản Giải Thích
 
-## 🔧 Troubleshooting
+```calcpad
+'Dòng bắt đầu với dấu ngoặc đơn (') là bình luận
+"Dòng này sẽ hiển thị trong báo cáo"
+"Bước 1: Tính diện tích"
+```
 
-### ❓ Workflow Not Running
-**Problem:** Pushed .cpd file but nothing happened
+### 4. Hiển Thị Kết Quả
 
-**Solution:**
-1. Go to: https://github.com/hydrostructai/calcpad_engineering/actions
-2. Check if workflow appears in list
-3. Click workflow to see logs
-4. Verify `.cpd` file is in `cpdinput/` folder
-5. Check that workflow file exists: `.github/workflows/main.yml`
+```calcpad
+M = 50 * 6 / 4    'Tính moment
+M = ?             'Hiển thị kết quả: M = 75 kNm
+```
 
-### ❓ HTML Exists But PDF Missing
-**Problem:** Can see HTML report but no PDF link
+### 5. Định Dạng Đầu Ra
 
-**Solution:**
-1. Check workflow logs for errors
-2. Try locally: `wkhtmltopdf test.html test.pdf`
-3. Verify repository has "Contents: Write" permission
-4. Check PDF file exists: `ls -la cpdpdf/`
-
-### ❓ Index Not Updated
-**Problem:** Report file exists but doesn't show in calcpad.html
-
-**Solution:**
-1. Manually regenerate: `python3 scripts/update_index.py`
-2. Verify HTML file exists: `ls -la cpdoutput/`
-3. Run locally first to test
-4. Commit and push updated `calcpad.html`
-
-### ❓ Custom Domain Not Working
-**Problem:** hydrostructai.com doesn't show reports
-
-**Solution:**
-1. Check DNS A records point to: `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
-2. Verify CNAME file exists: `cat CNAME`
-3. Clear browser cache and try again
-4. Wait 5 minutes for DNS propagation
+```calcpad
+M = 75
+M = 75%           'Phần trăm: 75%
+M = 75#2          'Làm tròn 2 chữ số thập phân
+M = 75!           'Bỏ qua hiển thị (giấu kết quả)
+```
 
 ---
 
-## 📚 Documentation
+## 💡 Ví Dụ Thực Tế
 
-### Included Files
+### Ví Dụ 1: Tính Diện Tích Hình Chữ Nhật
 
-- **README.md** (this file)
-  - Overview and quick start
-  - Adding new reports
-  - Basic troubleshooting
+```calcpad
+"Diện Tích Hình Chữ Nhật"
+b = 5 "m" 'Chiều rộng
+h = 3 "m" 'Chiều dài
+A = b * h "m²" 'Diện tích
+A = ? "Diện tích = ?"
+```
 
-- **PDF_GENERATION.md**
-  - How PDF generation works
-  - Customizing PDF options
-  - PDF-specific troubleshooting
-  - Storage considerations
+### Ví Dụ 2: Tính Moment Uốn Dầm Đơn Giản
 
-- **.github/workflows/main.yml**
-  - Complete workflow code
-  - Detailed step comments
-  - Permission configuration
+```calcpad
+"Phân Tích Dầm Đơn Giản Chịu Tải Trọng Tập Trung"
 
-- **scripts/update_index.py**
-  - Index generation logic
-  - Metadata extraction
-  - PDF detection
+'Dữ liệu đầu vào
+L = 6 "m" 'Chiều dài dầm
+P = 100 "kN" 'Tải trọng tập trung ở giữa nhịp
+a = L / 2 "m" 'Vị trí tải trọng
+
+'Tính toán phản lực
+R_A = P * (L - a) / L "kN"
+R_B = P * a / L "kN"
+
+'Moment uốn tại giữa nhịp
+M_max = P * a * (L - a) / L "kNm"
+
+'Hiển thị kết quả
+"Phản lực tại A:"
+R_A = ? 
+
+"Phản lực tại B:"
+R_B = ?
+
+"Moment uốn cực đại:"
+M_max = ?
+```
+
+### Ví Dụ 3: Tính Toán Thép Cốt
+
+```calcpad
+"Thiết Kế Thép Cốt Cho Dầm Bê Tông"
+
+'Dữ liệu
+M = 75 "kNm" 'Moment tác dụng
+f_y = 400 "MPa" 'Cường độ chảy thép
+f_c = 30 "MPa" 'Cường độ nén bê tông
+d = 0.5 "m" 'Độ sâu hiệu dụng
+
+'Tính diện tích thép cần thiết
+M_N = M * 1000 "kN"
+A_s_min = M_N / (0.87 * f_y * d) "cm²"
+
+"Diện tích thép cần thiết:"
+A_s_min = ?
+
+"Chọn thép: 4Φ20 = 12.57 cm² ✓"
+```
 
 ---
 
-## 📊 Current Reports
+## 🎨 Định Dạng Văn Bản
 
-All reports available at: **https://hydrostructai.com/calcpad_engineering/calcpad.html**
+### Heading (Tiêu Đề)
 
-### Quick Stats
-- **Total Reports:** 6
-- **Format:** All have both HTML + PDF
-- **Storage:** ~2.5 MB total
-- **Hosting:** GitHub Pages (free)
-- **Domain:** hydrostructai.com
+```calcpad
+"Tiêu đề Chính"           'Heading 1
+"_Tiêu đề Phụ"           'Heading 2
+"__Tiêu đề Phụ Phụ"      'Heading 3
+```
 
-### Report List
-1. Test Workflow - Reference test case
-2. Biaxial Column - Reinforced concrete analysis with Mander model
-3. Biaxial Column Optimized - Optimized design variant
-4. Flat Slab FEA - Finite element analysis
-5. Flat Slab FEA Optimized - FEA optimization
-6. Concrete Sections - Standard section reference
+### In Đậm, Nghiêng
 
-View with file sizes and download links at calcpad.html
+```calcpad
+"Văn bản **đậm**"          'In đậm
+"Văn bản **_nghiêng_**"   'Nghiêng
+"Văn bản ***đậm nghiêng***"
+```
+
+### Danh Sách
+
+```calcpad
+"Danh sách gạch đầu dòng:
+• Mục 1
+• Mục 2
+• Mục 3"
+
+"Danh sách số:
+1. Mục 1
+2. Mục 2
+3. Mục 3"
+```
 
 ---
 
-## 🛠️ Local Development
+## 🌐 Từ Calcpad Sang HTML/PDF
 
-### Prerequisites
-- Python 3.7+
-- Git
-- Optional: Calcpad 7.5.9 (for local testing)
-- Optional: wkhtmltopdf (for local PDF generation)
+### Tại Sao Xuất HTML/PDF?
+- 📤 **Chia sẻ:** Gửi báo cáo cho đồng nghiệp không cần Calcpad
+- 🖨️ **In ấn:** In báo cáo chuyên nghiệp từ HTML
+- 📎 **Lưu trữ:** Lưu bản sao lưu định kỳ
+- 🌐 **Công bố:** Đăng lên website
 
-### Local Setup
+### Cách Xuất
 
+**Calcpad Editor:**
+1. Mở file `.cpd`
+2. Nhấn "Generate" (Ctrl+G)
+3. Tìm file `.html` được tạo ra cùng thư mục
+
+**Từ dòng lệnh:**
 ```bash
-# Clone repository
-git clone https://github.com/hydrostructai/calcpad_engineering.git
-cd calcpad_engineering
-
-# Optional: Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Generate reports locally
-python3 scripts/update_index.py
-
-# Test locally
-python3 -m http.server 8000
-# Then open: http://localhost:8000/calcpad.html
+calcpad my_analysis.cpd
+# Tạo file: my_analysis.html
 ```
 
-### Running Calcpad Locally
-
+**Tạo PDF:**
 ```bash
-# Install Calcpad CLI
-dotnet tool install --global Calcpad.Cli --version 7.5.9
-
-# Run on single file
-calcpad cpdinput/myfile.cpd
-
-# Convert to PDF
-wkhtmltopdf cpdoutput/myfile.html cpdpdf/myfile.pdf
-
-# Regenerate index
-python3 scripts/update_index.py
+wkhtmltopdf my_analysis.html my_analysis.pdf
 ```
 
 ---
 
-## 🔗 Quick Links
+## 🔗 Liên Kết Hữu Ích
 
-| Link | Purpose |
-|------|---------|
-| https://hydrostructai.com | Main website |
-| https://hydrostructai.com/calcpad_engineering/calcpad.html | All reports |
-| https://github.com/hydrostructai/calcpad_engineering | Source code |
-| https://github.com/hydrostructai/calcpad_engineering/actions | Workflow status |
-| https://www.calcpad.eu | Calcpad official |
+| Tài Nguyên | Link |
+|-----------|------|
+| **Calcpad Official** | https://www.calcpad.eu |
+| **Calcpad Forum** | https://www.calcpad.eu/forum |
+| **Calcpad Docs** | https://www.calcpad.eu/docs |
+| **Báo cáo HydrostructAI** | https://hydrostructai.com/calcpad_engineering/ |
+| **Hỗ trợ** | support@calcpad.eu |
+
+---
+
+## ⚡ Mẹo & Thủ Thuật
+
+### 1. Tái Sử Dụng Template
+Lưu file `.cpd` làm template, sau đó:
+```bash
+cp template.cpd my_new_analysis.cpd
+```
+Chỉnh sửa giá trị đầu vào, kết quả tự động cập nhật!
+
+### 2. Nhóm Biến Liên Quan
+```calcpad
+'Vật liệu bê tông
+f_c = 30 "MPa"
+E_c = 25000 "MPa"
+
+'Vật liệu thép
+f_y = 400 "MPa"
+E_s = 200000 "MPa"
+```
+
+### 3. Kiểm Tra Độc Lập
+```calcpad
+'Tính toán chính
+M = 75 "kNm"
+
+'Kiểm tra lại bằng công thức khác
+M_check = P * L / 4
+M_check = ?
+
+'Nếu kết quả bằng nhau thì ✓ đúng
+```
+
+### 4. Ẩn Các Phép Tính Trung Gian
+```calcpad
+temp = 5 * 10 'Ẩn không hiển thị
+result = temp / 2
+result = ? 'Chỉ hiển thị kết quả cuối
+```
+
+---
+
+## 🔍 Xử Lý Sự Cố
+
+| Vấn Đề | Giải Pháp |
+|--------|---------|
+| **Lỗi cú pháp** | Kiểm tra dấu ngoặc kép, dấu phẩy, toán tử |
+| **Không tính toán được** | Kiểm tra đơn vị, biến chưa khai báo |
+| **HTML không được tạo** | Chắc chắn file `.cpd` không có lỗi |
+| **PDF lỗi định dạng** | Kiểm tra wkhtmltopdf đã cài đặt |
+
+---
+
+## 📚 Tài Liệu Bổ Sung
+
+- **[Guide-setup-run-calcpad.md](Guide-setup-run-calcpad.md)** - Hướng dẫn triển khai GitHub Actions
+- **[PDF_GENERATION.md](PDF_GENERATION.md)** - Chi tiết về tạo PDF
+- **https://hydrostructai.com/calcpad_engineering/** - Xem các báo cáo thực tế
+
+---
+
+## 👨‍💼 Hỗ Trợ
+
+**Các câu hỏi thường gặp:**
+1. Làm cách nào để viết căn bậc hai? `√` hoặc `sqrt()`
+2. Làm cách nào để chuyển đơn vị? `L = 1000 "mm" = ? "m"`
+3. Làm cách nào để ẩn dòng tính toán? Thêm `!` vào cuối
+
+Xem thêm: https://www.calcpad.eu/docs
 
 ---
 
 ## 📝 License
 
-MIT License - See [LICENSE](LICENSE) file for details
+MIT License
 
 ---
 
-## 👤 Contact
-
-**Developer:** Ha Nguyen  
-**Email:** ha.nguyen.cttl@gmail.com  
-**GitHub:** [@Haah82](https://github.com/Haah82)
-
----
-
-## ✅ Status
-
-- ✅ GitHub Actions: Active
-- ✅ Custom Domain: Active (hydrostructai.com)
-- ✅ PDF Generation: Active
-- ✅ Auto-Index: Active
-- ✅ GitHub Pages: Live
-
----
-
-**Last Updated:** 2026-01-21
-👉 Workflow sẽ **tự động chạy** và sinh file `.html`
-
-#### Cách B: Trigger Workflow hiện tại
-```bash
-make trigger
-```
-👉 Hoặc vào GitHub > **Actions** > **Calcpad Automation Workflow** > **Run workflow**
-
----
-
-### **3️⃣ Xem Báo cáo trực tuyến**
-
-Sau khi Workflow chạy xong (1-2 phút):
-1. Kiểm tra tab **Actions** để xem trạng thái
-2. Truy cập: https://hydrostructai.github.io/calcpad_engineering/calcpad.html
-3. Danh sách báo cáo sẽ tự động cập nhật
-
----
-
-## 🛠️ Lệnh Makefile
-
-```bash
-make test       # Kiểm tra Calcpad đã cài chưa
-make build      # Sinh báo cáo cục bộ
-make trigger    # Trigger GitHub Action
-make clean      # Xóa file HTML
-make help       # Xem danh sách lệnh
-```
-
----
-
-## ⚙️ Cấu hình GitHub Pages
-
-1. Vào **Settings** > **Pages**
-2. **Source**: `Deploy from a branch`
-3. **Branch**: `main`
-4. **Folder**: `/ (root)`
-5. Nhấn **Save**
-
----
-
-## 📝 Quy ước Đặt tên File
-
-```
-✅ Đúng:     parametric_rc_beam.cpd
-❌ Sai:      parametric rc beam.cpd  (có dấu cách)
-```
-
----
-
-## 🔗 Liên kết Hữu ích
-
-- 📊 Báo cáo: https://hydrostructai.github.io/calcpad_engineering/calcpad.html
-- 📝 GitHub: https://github.com/hydrostructai/calcpad_engineering
-- 🔄 Actions: https://github.com/hydrostructai/calcpad_engineering/actions
-
----
-
-## ❓ Xử lý Sự cố
-
-### **Workflow chạy thất bại**
-1. Vào **Actions** tab > Xem logs chi tiết
-2. Thường do:
-   - Lỗi cú pháp trong `.cpd`
-   - File `.cpd` không được tìm thấy
-
-### **GitHub Pages hiển thị 404**
-1. Kiểm tra **Settings > Pages** đã bật chưa
-2. Chắc chắn **Branch** là `main`
-3. Chờ 1-2 phút để trang cấp nhật
-
-### **File .html không được sinh**
-```bash
-# Test cục bộ
-make build
-
-# Kiểm tra output
-ls -lh cpdoutput/
-```
-
----
-
-*Developed for HydrostructAI Engineering Automation Platform*
+**Cập nhật cuối:** 2026-01-22
