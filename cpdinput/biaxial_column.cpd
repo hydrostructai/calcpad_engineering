@@ -1,0 +1,490 @@
+"Phân tích Cột BTCT chịu Nén lệch tâm Xiên - Mô hình Mander
+<hr>
+
+#hide
+'<style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+    h2 { color: #34495e; margin-top: 30px; border-left: 4px solid #3498db; padding-left: 10px; }
+    .input-section { background: #ecf0f1; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    .result-section { background: #e8f5e9; padding: 15px; border-radius: 5px; margin: 10px 0; }
+    .warning { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin: 10px 0; }
+    .success { background: #d4edda; padding: 10px; border-left: 4px solid #28a745; margin: 10px 0; }
+    .fail { background: #f8d7da; padding: 10px; border-left: 4px solid #dc3545; margin: 10px 0; }
+    table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #3498db; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+</style>'
+#show
+
+#post
+
+<h2>I. THÔNG SỐ HÌNH HỌC MẶT CẮT</h2>
+<div class="input-section">
+
+'<b>Kích thước mặt cắt:</b>
+#hide
+Lx = 500 'mm - Chiều rộng mặt cắt
+Ly = 600 'mm - Chiều cao mặt cắt
+#show
+L_x = ?'mm - Chiều rộng mặt cắt
+L_y = ?'mm - Chiều cao mặt cắt
+
+'<b>Lớp bảo vệ:</b>
+#hide
+cover = 40 'mm - Lớp bảo vệ
+#show
+c = ?'mm - Lớp bảo vệ
+
+'<b>Cốt thép dọc:</b>
+#hide
+n_bars_x = 3 'Số thanh trên cạnh Lx
+n_bars_y = 4 'Số thanh trên cạnh Ly
+dia_bar = 20 'mm - Đường kính thép
+#show
+n_x = ? 'Số thanh trên cạnh L_x
+n_y = ? 'Số thanh trên cạnh L_y
+d_b = ?'mm - Đường kính thép dọc
+
+#hide
+As_total = n_bars_x*2 + (n_bars_y - 2)*2 'Tổng số thanh
+As_area_single = π*dia_bar^2/4 'mm²
+As = As_total*As_area_single 'mm² - Diện tích thép tổng
+rho_s = As/(Lx*Ly)*100 '%
+#show
+n_total = ? 'Tổng số thanh thép
+A_s1 = ?'mm² - Diện tích 1 thanh
+A_s = ?'mm² - Diện tích thép tổng
+ρ_s = ?'% - Tỷ lệ hàm lượng thép
+
+'<b>Cốt đai:</b>
+#hide
+dia_stirrup = 10 'mm - Đường kính đai
+spacing = 150 'mm - Khoảng cách đai
+#show
+d_s = ?'mm - Đường kính đai
+s = ?'mm - Khoảng cách đai
+
+</div>
+
+<h2>II. ĐỘ BỀN VẬT LIỆU</h2>
+<div class="input-section">
+
+'<b>Bê tông:</b>
+#hide
+fc = 30 'MPa - Cường độ chịu nén
+eps_c0 = 0.002 'Biến dạng ở đỉnh (unconfined)
+eps_cu = 0.0035 'Biến dạng giới hạn
+#show
+f_c = ?'MPa - Cường độ chịu nén
+ε_c0 = ? 'Biến dạng ở đỉnh
+ε_cu = ? 'Biến dạng giới hạn
+
+'<b>Thép:</b>
+#hide
+fy = 420 'MPa - Giới hạn chảy
+Es = 200000 'MPa - Mô đun đàn hồi
+eps_y = fy/Es 'Biến dạng chảy
+eps_su = 0.01 'Biến dạng giới hạn thép
+#show
+f_y = ?'MPa - Giới hạn chảy
+E_s = ?'MPa - Mô đun đàn hồi
+ε_y = ? 'Biến dạng chảy
+ε_su = ? 'Biến dạng giới hạn
+
+</div>
+
+<h2>III. MÔ HÌNH MANDER - BÊ TÔNG GIA CƯỜNG</h2>
+<div class="result-section">
+
+'<b>Thông số lõi bê tông:</b>
+#hide
+bc = Lx - 2*cover 'mm - Chiều rộng lõi
+dc = Ly - 2*cover 'mm - Chiều cao lõi
+#show
+b_c = ?'mm - Chiều rộng lõi
+d_c = ?'mm - Chiều cao lõi
+
+'<b>Áp lực gia cường từ đai:</b>
+#hide
+As_stirrup = π*dia_stirrup^2/4 'mm² - Diện tích đai
+fl_x = 2*As_stirrup*fy/(spacing*dc) 'MPa - Áp lực theo x
+fl_y = 2*As_stirrup*fy/(spacing*bc) 'MPa - Áp lực theo y
+#show
+A_stirrup = ?'mm² - Diện tích đai
+f_lx = ?'MPa - Áp lực gia cường theo x
+f_ly = ?'MPa - Áp lực gia cường theo y
+
+'<b>Hệ số hiệu quả gia cường (Mander 1988):</b>
+#hide
+s_prime = spacing - dia_stirrup 'mm
+ke_x = (1 - s_prime/(2*bc))^2 'Hệ số hiệu quả x
+ke_y = (1 - s_prime/(2*dc))^2 'Hệ số hiệu quả y
+rho_cc = As_total*As_area_single/(bc*dc) 'Tỷ lệ thép trong lõi
+ke = (1 - rho_cc)*ke_x*ke_y 'Hệ số hiệu quả tổng hợp
+#show
+s' = ?'mm - Khoảng cách thực đai
+k_ex = ? 'Hệ số hiệu quả x
+k_ey = ? 'Hệ số hiệu quả y
+ρ_cc = ? 'Tỷ lệ thép dọc trong lõi
+k_e = ? 'Hệ số hiệu quả tổng hợp
+
+#hide
+fl_eff_x = ke*fl_x 'MPa
+fl_eff_y = ke*fl_y 'MPa
+fl_eff = (fl_eff_x + fl_eff_y)/2 'MPa - Trung bình
+#show
+f'_lx = ?'MPa - Áp lực hiệu quả x
+f'_ly = ?'MPa - Áp lực hiệu quả y
+f'_l = ?'MPa - Áp lực hiệu quả trung bình
+
+'<b>Cường độ bê tông gia cường (Mander):</b>
+#hide
+fcc = fc*(2.254*sqr(1 + 7.94*fl_eff/fc) - 2*fl_eff/fc - 1.254) 'MPa
+eps_cc = eps_c0*(1 + 5*(fcc/fc - 1)) 'Biến dạng đỉnh confined
+#show
+f_cc = ?'MPa - Cường độ bê tông gia cường
+ε_cc = ? 'Biến dạng đỉnh gia cường
+
+'<div class="success">
+Cường độ tăng: <b>$round(fcc/fc*100 - 100; 1)%</b><br>
+Biến dạng tăng: <b>$round(eps_cc/eps_c0*100 - 100; 1)%</b>
+'</div>
+
+</div>
+
+<h2>IV. PHÂN TÍCH ỨNG SUẤT - BIẾN DẠNG MẶT CẮT</h2>
+<div class="result-section">
+
+'<b>Giả định biến dạng phẳng:</b>
+'- Biến dạng thớ trên: ε<sub>t</sub>
+'- Biến dạng thớ dưới: ε<sub>c</sub> (nén, âm)
+'- Trục trung hòa: c (khoảng cách từ thớ nén)
+
+'<b>Mô hình ứng suất Hognestad (Unconfined):</b>
+'- ε ≤ ε<sub>c0</sub>: σ<sub>c</sub> = f<sub>c</sub> [2(ε/ε<sub>c0</sub>) - (ε/ε<sub>c0</sub>)²]
+'- ε > ε<sub>c0</sub>: σ<sub>c</sub> = f<sub>c</sub> [1 - 0.15(ε - ε<sub>c0</sub>)/ε<sub>c0</sub>]
+
+'<b>Mô hình ứng suất Mander (Confined Core):</b>
+'- σ<sub>cc</sub> = f<sub>cc</sub> · x·r / (r - 1 + x<sup>r</sup>)
+'- x = ε/ε<sub>cc</sub>
+'- r = E<sub>c</sub>/(E<sub>c</sub> - E<sub>sec</sub>)
+'- E<sub>c</sub> = 5000√f<sub>c</sub> (MPa)
+'- E<sub>sec</sub> = f<sub>cc</sub>/ε<sub>cc</sub>
+
+'<b>Mô hình thép (EPP - Elastic Perfectly Plastic):</b>
+'- ε ≤ ε<sub>y</sub>: σ<sub>s</sub> = E<sub>s</sub>·ε
+'- ε > ε<sub>y</sub>: σ<sub>s</sub> = f<sub>y</sub> (kéo)
+'- ε < -ε<sub>y</sub>: σ<sub>s</sub> = -f<sub>y</sub> (nén)
+
+</div>
+
+<h2>V. PHÂN TÍCH CHỊU NÉN ĐƠN TRỤC (P-EPSILON)</h2>
+<div class="result-section">
+
+'<b>Phân tích đơn giản hóa (Nén đồng nhất):</b>
+
+'<b>Trường hợp 1: Biến dạng đồng nhất ε = 0.001</b>
+#hide
+eps_test_1 = 0.001
+ratio_1 = eps_test_1/eps_c0
+#show
+ε_test1 = ?
+ratio_1 = ?
+
+#hide
+#if eps_test_1 ≤ eps_c0
+    sigma_c_1 = fc*(2*ratio_1 - ratio_1^2)
+#else
+    sigma_c_1 = fc*(1 - 0.15*(eps_test_1 - eps_c0)/eps_c0)
+#end if
+#show
+#if ε_test1 ≤ ε_c0
+    σ_c1 = ?'MPa (Hognestad parabolic)
+#else
+    σ_c1 = ?'MPa (Hognestad linear descent)
+#end if
+
+#hide
+sigma_s_1 = min(Es*eps_test_1; fy)
+P_1 = sigma_c_1*(Lx*Ly - As) + sigma_s_1*As
+#show
+σ_s1 = ?'MPa
+P_1 = ?'kN - Lực nén
+
+'<b>Trường hợp 2: Biến dạng đồng nhất ε = ε<sub>c0</sub> (đỉnh)</b>
+#hide
+eps_test_2 = eps_c0
+ratio_2 = eps_test_2/eps_c0
+sigma_c_2 = fc*(2*ratio_2 - ratio_2^2)
+sigma_s_2 = min(Es*eps_test_2; fy)
+P_2 = sigma_c_2*(Lx*Ly - As) + sigma_s_2*As
+#show
+ε_test2 = ?
+σ_c2 = ?'MPa (tại đỉnh)
+σ_s2 = ?'MPa
+P_2 = ?'kN
+
+'<b>Trường hợp 3: Biến dạng đồng nhất ε = ε<sub>cc</sub> (confined peak)</b>
+#hide
+eps_test_3 = eps_cc
+#Mander model for confined core
+Ec_concrete = 5000*sqr(fc) 'MPa
+Esec_concrete = fcc/eps_cc
+r_mander = Ec_concrete/(Ec_concrete - Esec_concrete)
+x_mander = eps_test_3/eps_cc
+sigma_cc_3 = fcc*x_mander*r_mander/(r_mander - 1 + x_mander^r_mander)
+#Unconfined cover
+ratio_3 = eps_test_3/eps_c0
+#if eps_test_3 ≤ eps_c0
+    sigma_c_3 = fc*(2*ratio_3 - ratio_3^2)
+#else
+    sigma_c_3 = fc*(1 - 0.15*(eps_test_3 - eps_c0)/eps_c0)
+#end if
+#Steel
+sigma_s_3 = min(Es*eps_test_3; fy)
+#Composite
+Ac_core = bc*dc
+Ac_cover = Lx*Ly - Ac_core
+P_3 = sigma_cc_3*Ac_core + sigma_c_3*Ac_cover + sigma_s_3*As
+#show
+ε_test3 = ?
+E_c = ?'MPa - Mô đun ban đầu
+E_sec = ?'MPa - Mô đun cát tuyến
+r = ? 'Hệ số Mander
+σ_cc3 = ?'MPa (Mander confined)
+σ_cover3 = ?'MPa (Hognestad unconfined)
+σ_s3 = ?'MPa
+P_3 = ?'kN
+
+'<b>Sức chịu tải tối đa ước tính (P<sub>n,max</sub>):</b>
+#hide
+Pn_max = max(P_1; max(P_2; P_3))
+#show
+P_n_max = ?'kN
+
+</div>
+
+<h2>VI. PHÂN TÍCH CHỊU UỐN ĐƠN TRỤC</h2>
+<div class="result-section">
+
+'<b>Giả định: Nén lệch tâm uốn quanh trục X (Mx ≠ 0, My = 0)</b>
+
+'<b>Phương pháp đơn giản hóa Whitney:</b>
+#hide
+beta1 = 0.85 'Hệ số khối ứng suất
+#Giả định c (khoảng cách trục trung hòa)
+c_assumed = Ly*0.3 'mm - Giả định 30% chiều cao
+a = beta1*c_assumed 'mm - Chiều cao khối ứng suất
+#show
+β_1 = ? 'Hệ số khối ứng suất Whitney
+c = ?'mm - Khoảng cách trục trung hòa (giả định)
+a = ?'mm - Chiều cao khối ứng suất
+
+#hide
+d_eff = Ly - cover - dia_bar/2 'mm - Khoảng cách thép kéo
+eps_s_tension = eps_c0*(d_eff - c)/c 'Biến dạng thép kéo
+fs_tension = min(Es*eps_s_tension; fy) 'MPa
+#Thép nén (nếu có)
+d_comp = cover + dia_bar/2
+eps_s_comp = eps_c0*(c - d_comp)/c
+fs_comp = min(Es*abs(eps_s_comp); fy)
+#Diện tích thép
+As_tension = n_bars_x*As_area_single 'mm²
+As_comp = n_bars_x*As_area_single 'mm²
+#Cân bằng lực
+Cc = 0.85*fc*a*Lx 'kN - Lực nén bê tông
+Ts = fs_tension*As_tension/1000 'kN - Lực kéo thép
+Cs = fs_comp*As_comp/1000 'kN - Lực nén thép
+#Moment
+Mn_x = (Cc*(Ly/2 - a/2) + Cs*(Ly/2 - d_comp) + Ts*(d_eff - Ly/2))/1000000 'kN·m
+#show
+d = ?'mm - Khoảng cách hữu hiệu
+ε_st = ? 'Biến dạng thép kéo
+f_st = ?'MPa
+ε_sc = ? 'Biến dạng thép nén
+f_sc = ?'MPa
+A_st = ?'mm² - Diện tích thép kéo
+A_sc = ?'mm² - Diện tích thép nén
+C_c = ?'kN - Lực nén bê tông
+T_s = ?'kN - Lực kéo thép
+C_s = ?'kN - Lực nén thép
+M_nx = ?'kN·m - Moment khả năng quanh X
+
+'<b>Tương tự cho trục Y (My ≠ 0, Mx = 0):</b>
+#hide
+c_assumed_y = Lx*0.3
+a_y = beta1*c_assumed_y
+d_eff_y = Lx - cover - dia_bar/2
+eps_s_tension_y = eps_c0*(d_eff_y - c_assumed_y)/c_assumed_y
+fs_tension_y = min(Es*eps_s_tension_y; fy)
+d_comp_y = cover + dia_bar/2
+eps_s_comp_y = eps_c0*(c_assumed_y - d_comp_y)/c_assumed_y
+fs_comp_y = min(Es*abs(eps_s_comp_y); fy)
+As_tension_y = n_bars_y*As_area_single
+As_comp_y = n_bars_y*As_area_single
+Cc_y = 0.85*fc*a_y*Ly/1000
+Ts_y = fs_tension_y*As_tension_y/1000
+Cs_y = fs_comp_y*As_comp_y/1000
+Mn_y = (Cc_y*(Lx/2 - a_y/2) + Cs_y*(Lx/2 - d_comp_y) + Ts_y*(d_eff_y - Lx/2))/1000000
+#show
+M_ny = ?'kN·m - Moment khả năng quanh Y
+
+</div>
+
+<h2>VII. KIỂM TRA CHỊU UỐN XIÊN (BRESLER)</h2>
+<div class="input-section">
+
+'<b>Lực và moment tác dụng:</b>
+#hide
+P_applied = 1500 'kN - Lực nén dọc trục
+Mx_applied = 150 'kN·m - Moment quanh X
+My_applied = 100 'kN·m - Moment quanh Y
+#show
+P_u = ?'kN - Lực nén thiết kế
+M_ux = ?'kN·m - Moment thiết kế quanh X
+M_uy = ?'kN·m - Moment thiết kế quanh Y
+
+</div>
+
+<div class="result-section">
+
+'<b>Phương trình tương tác Bresler:</b>
+'(M<sub>x</sub>/M<sub>nx</sub>)<sup>α</sup> + (M<sub>y</sub>/M<sub>ny</sub>)<sup>α</sup> ≤ 1.0
+
+#hide
+alpha = 1.5 'Hệ số Bresler (thường 1.0-2.0)
+bresler_check = (Mx_applied/Mn_x)^alpha + (My_applied/Mn_y)^alpha
+#show
+α = ? 'Hệ số Bresler
+Bresler = ?
+
+#hide
+#if bresler_check ≤ 1.0
+    check_status = "PASS ✓"
+    check_class = "success"
+#else
+    check_status = "FAIL ✗"
+    check_class = "fail"
+#end if
+#show
+'<div class="$check_class">
+Kết quả kiểm tra: <b>$check_status</b><br>
+Bresler = $round(bresler_check; 3) $#if bresler_check ≤ 1.0 ≤ $#else > $#end if 1.0
+'</div>
+
+'<b>Tỷ lệ sử dụng khả năng:</b>
+#hide
+usage_x = Mx_applied/Mn_x*100
+usage_y = My_applied/Mn_y*100
+usage_max = max(usage_x; usage_y)
+#show
+U_x = ?'% - Sử dụng moment X
+U_y = ?'% - Sử dụng moment Y
+U_max = ?'% - Sử dụng tối đa
+
+</div>
+
+<h2>VIII. VISUALIZE MẶT CẮT (PLOTLY)</h2>
+#hide
+'<div id="section-plot" style="width:100%; height:600px;"></div>
+
+'<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+'<script>
+// Section boundary
+var x_rect = [-$Lx/2, $Lx/2, $Lx/2, -$Lx/2, -$Lx/2];
+var y_rect = [-$Ly/2, -$Ly/2, $Ly/2, $Ly/2, -$Ly/2];
+
+// Core boundary
+var x_core = [-($(Lx - 2*cover))/2, ($(Lx - 2*cover))/2, ($(Lx - 2*cover))/2, -($(Lx - 2*cover))/2, -($(Lx - 2*cover))/2];
+var y_core = [-($(Ly - 2*cover))/2, -($(Ly - 2*cover))/2, ($(Ly - 2*cover))/2, ($(Ly - 2*cover))/2, -($(Ly - 2*cover))/2];
+
+// Rebar positions
+var x_bars = [];
+var y_bars = [];
+
+// Bottom row
+for (var i = 0; i < $n_bars_x; i++) {
+    x_bars.push(-($Lx - 2*$cover)/2 + i*($Lx - 2*$cover)/($n_bars_x - 1));
+    y_bars.push(-($Ly - 2*$cover)/2);
+}
+
+// Top row
+for (var i = 0; i < $n_bars_x; i++) {
+    x_bars.push(-($Lx - 2*$cover)/2 + i*($Lx - 2*$cover)/($n_bars_x - 1));
+    y_bars.push(($Ly - 2*$cover)/2);
+}
+
+// Left column (excluding corners)
+for (var i = 1; i < $n_bars_y - 1; i++) {
+    x_bars.push(-($Lx - 2*$cover)/2);
+    y_bars.push(-($Ly - 2*$cover)/2 + i*($Ly - 2*$cover)/($n_bars_y - 1));
+}
+
+// Right column (excluding corners)
+for (var i = 1; i < $n_bars_y - 1; i++) {
+    x_bars.push(($Lx - 2*$cover)/2);
+    y_bars.push(-($Ly - 2*$cover)/2 + i*($Ly - 2*$cover)/($n_bars_y - 1));
+}
+
+var trace_section = {
+    x: x_rect,
+    y: y_rect,
+    mode: 'lines',
+    fill: 'toself',
+    fillcolor: 'rgba(200, 200, 200, 0.3)',
+    line: {color: 'black', width: 2},
+    name: 'Mặt cắt'
+};
+
+var trace_core = {
+    x: x_core,
+    y: y_core,
+    mode: 'lines',
+    line: {color: 'blue', width: 1, dash: 'dash'},
+    name: 'Lõi gia cường'
+};
+
+var trace_bars = {
+    x: x_bars,
+    y: y_bars,
+    mode: 'markers',
+    marker: {
+        color: 'red',
+        size: $dia_bar/2,
+        symbol: 'circle'
+    },
+    name: 'Thép dọc (Ø' + $dia_bar + ')'
+};
+
+var layout = {
+    title: 'Mặt cắt ngang cột ' + $Lx + 'x' + $Ly + ' mm',
+    xaxis: {
+        title: 'X (mm)',
+        scaleanchor: 'y',
+        scaleratio: 1,
+        zeroline: true,
+        zerolinecolor: 'gray',
+        zerolinewidth: 1
+    },
+    yaxis: {
+        title: 'Y (mm)',
+        zeroline: true,
+        zerolinecolor: 'gray',
+        zerolinewidth: 1
+    },
+    showlegend: true,
+    hovermode: 'closest'
+};
+
+Plotly.newPlot('section-plot', [trace_section, trace_core, trace_bars], layout);
+'</script>
+#show
+
+#post
+<hr>
+<p style="text-align:center; color:#7f8c8d; font-size:0.9em;">
+Phân tích Cột BTCT Xiên - Mô hình Mander & Bresler<br>
+Tạo bởi Calcpad • hydrostructai.com
+</p>
