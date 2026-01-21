@@ -31,7 +31,7 @@ jobs:
       - name: Process CPD Files
         run: |
           set -x  # Enable debug output
-          mkdir -p cpdoutput
+          mkdir -p cpdoutput cpdpdf
           
           # List all CPD files for debugging
           echo "=== CPD FILES FOUND ==="
@@ -60,7 +60,20 @@ jobs:
             # Check if HTML was generated
             if [ -f "cpdinput/$filename.html" ]; then
               mv "cpdinput/$filename.html" "cpdoutput/$filename.html"
-              echo "✅ Generated: cpdoutput/$filename.html"
+              echo "✅ Generated HTML: cpdoutput/$filename.html"
+              
+              # Convert HTML to PDF
+              if command -v wkhtmltopdf &> /dev/null; then
+                echo "  Converting to PDF..."
+                wkhtmltopdf --quiet "cpdoutput/$filename.html" "cpdpdf/$filename.pdf" 2>/dev/null || true
+                if [ -f "cpdpdf/$filename.pdf" ]; then
+                  echo "✅ Generated PDF: cpdpdf/$filename.pdf"
+                else
+                  echo "⚠️ PDF generation failed for $filename"
+                fi
+              else
+                echo "⚠️ wkhtmltopdf not available - skipping PDF"
+              fi
             else
               echo "❌ HTML not generated for $filename"
               # List what files are in cpdinput for debugging
@@ -68,8 +81,12 @@ jobs:
             fi
           done
           
-          echo "=== FINAL CPDOUTPUT CONTENTS ===" 
-          ls -lh cpdoutput/
+          echo "=== FINAL OUTPUT CONTENTS ===" 
+          echo "HTML files:"
+          ls -lh cpdoutput/ 2>/dev/null || echo "No HTML files"
+          echo ""
+          echo "PDF files:"
+          ls -lh cpdpdf/ 2>/dev/null || echo "No PDF files"
 
       - name: Update Navigation Index
         run: |
@@ -92,12 +109,12 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           # Check if there are changes to commit
-          if git diff --quiet cpdoutput/ calcpad.html; then
+          if git diff --quiet cpdoutput/ cpdpdf/ calcpad.html; then
             echo "✅ No changes to commit (files already processed)"
           else
-            echo "📝 Committing generated reports..."
-            git add cpdoutput/*.html calcpad.html
-            git commit -m "Auto-generate reports [skip ci]"
+            echo "📝 Committing generated reports (HTML + PDF)..."
+            git add cpdoutput/*.html cpdpdf/*.pdf calcpad.html 2>/dev/null || true
+            git commit -m "Auto-generate reports: HTML + PDF [skip ci]"
             
             # Use GITHUB_TOKEN for authentication
             git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/hydrostructai/calcpad_engineering.git
