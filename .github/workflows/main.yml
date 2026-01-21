@@ -19,13 +19,54 @@ jobs:
 
       - name: Install Calcpad and Dependencies
         run: |
-          # Try to find calcpad-run in system
-          if command -v calcpad-run &> /dev/null; then
-            echo "✅ calcpad-run found in PATH"
-            which calcpad-run
+          echo "🔧 Installing dependencies for Calcpad..."
+          
+          # Update package lists
+          sudo apt-get update -qq
+          
+          # Method 1: Try installing calcpad from Ubuntu repositories
+          echo "📦 Attempting to install calcpad via apt..."
+          if sudo apt-get install -y calcpad 2>/dev/null; then
+            echo "✅ calcpad installed via apt"
           else
-            echo "⚠️ calcpad-run not found - attempting to locate"
-            find / -name "calcpad-run" -o -name "calcpad.exe" 2>/dev/null | head -3
+            echo "ℹ️  calcpad not in standard repos, trying calcpad-cli..."
+            sudo apt-get install -y calcpad-cli 2>/dev/null || echo "⚠️ calcpad-cli also not available"
+          fi
+          
+          # Method 2: Try alternative installation
+          if ! command -v calcpad-run &> /dev/null; then
+            echo "📥 Attempting snap installation..."
+            sudo snap install calcpad --classic 2>/dev/null || echo "⚠️ Snap installation failed"
+          fi
+          
+          # Install wkhtmltopdf for PDF generation
+          echo "📦 Installing wkhtmltopdf..."
+          sudo apt-get install -y wkhtmltopdf 2>/dev/null || echo "⚠️ wkhtmltopdf installation skipped"
+          
+          # Install Python3 and pip for index generation
+          echo "📦 Installing Python3..."
+          sudo apt-get install -y python3 python3-pip 2>/dev/null
+          
+          # Final verification
+          echo ""
+          echo "🔍 VERIFICATION:"
+          if command -v calcpad-run &> /dev/null; then
+            echo "✅ calcpad-run: $(which calcpad-run)"
+            calcpad-run --version 2>/dev/null || echo "  (version check not available)"
+          else
+            echo "⚠️  calcpad-run: NOT FOUND"
+          fi
+          
+          if command -v wkhtmltopdf &> /dev/null; then
+            echo "✅ wkhtmltopdf: $(which wkhtmltopdf)"
+          else
+            echo "⚠️  wkhtmltopdf: NOT FOUND"
+          fi
+          
+          if command -v python3 &> /dev/null; then
+            echo "✅ python3: $(python3 --version)"
+          else
+            echo "⚠️  python3: NOT FOUND"
           fi
 
       - name: Process CPD Files with Sync
@@ -36,6 +77,20 @@ jobs:
           echo "════════════════════════════════════════════════════════"
           echo "  🔍 GITHUB ACTIONS CPD-HTML-PDF SYNCHRONIZATION"
           echo "════════════════════════════════════════════════════════"
+          
+          # Pre-flight checks
+          echo ""
+          echo "📂 PRE-FLIGHT CHECKS:"
+          echo "   Working directory: $(pwd)"
+          echo "   cpdinput/ contents:"
+          ls -lah cpdinput/ || echo "   (cpdinput/ does not exist!)"
+          echo ""
+          echo "   cpdoutput/ status:"
+          ls -lah cpdoutput/ 2>/dev/null || echo "   (will be created)"
+          echo ""
+          echo "   cpdpdf/ status:"
+          ls -lah cpdpdf/ 2>/dev/null || echo "   (will be created)"
+          echo ""
           
           # =========================================================
           # STEP 1: DETECT AND DELETE ORPHANED FILES
@@ -97,13 +152,35 @@ jobs:
                 # Generate HTML via Calcpad
                 if command -v calcpad-run &> /dev/null; then
                   echo "    ├─ Generating HTML (calcpad-run)..."
-                  calcpad-run "$cpd_path" || true
+                  echo "       Command: calcpad-run \"$cpd_path\""
+                  
+                  # Run with full error output for debugging
+                  if calcpad-run "$cpd_path" 2>&1; then
+                    echo "    ├─ ✅ calcpad-run execution successful"
+                  else
+                    echo "    ├─ ❌ calcpad-run execution failed (exit code: $?)"
+                  fi
                 else
-                  echo "    ├─ calcpad-run not found - attempting alternate method..."
+                  echo "    ├─ ❌ calcpad-run COMMAND NOT FOUND"
+                  echo "       Available commands:"
+                  ls -la /usr/bin/*calcpad* 2>/dev/null || echo "       (No calcpad binaries found)"
+                  
+                  echo "       Attempting alternate method..."
                   RUNCPD=$(find /usr -name "runcpd" 2>/dev/null | head -1)
                   if [ -n "$RUNCPD" ]; then
-                    bash "$RUNCPD" "$cpd_path" || true
+                    echo "       Found runcpd at: $RUNCPD"
+                    bash "$RUNCPD" "$cpd_path" 2>&1 || echo "       (runcpd also failed)"
                   fi
+                fi
+                
+                # Check if HTML was actually created
+                echo "    ├─ Checking for generated HTML..."
+                if [ -f "cpdinput/$filename.html" ]; then
+                  echo "    ├─ ✅ Found: cpdinput/$filename.html ($(du -h cpdinput/$filename.html | cut -f1))"
+                else
+                  echo "    ├─ ❌ NOT FOUND: cpdinput/$filename.html"
+                  echo "       Contents of cpdinput/ directory:"
+                  ls -lah cpdinput/ | grep "$filename"
                 fi
                 
                 # Move HTML to output folder
