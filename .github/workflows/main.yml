@@ -22,52 +22,91 @@ jobs:
           echo "🔧 Installing dependencies for Calcpad..."
           
           # Update package lists
-          sudo apt-get update -qq
+          sudo apt-get update -qq 2>/dev/null
           
-          # Method 1: Try installing calcpad from Ubuntu repositories
-          echo "📦 Attempting to install calcpad via apt..."
-          if sudo apt-get install -y calcpad 2>/dev/null; then
-            echo "✅ calcpad installed via apt"
+          # Install essential build tools and libraries first
+          echo "📦 Installing system dependencies..."
+          sudo apt-get install -y \
+            build-essential \
+            wget \
+            curl \
+            unzip \
+            git \
+            python3 \
+            python3-pip \
+            xvfb \
+            libxrender1 \
+            libxext6 \
+            libglib2.0-0 \
+            libgtk-3-0 \
+            2>/dev/null || echo "⚠️  Some dependencies failed"
+          
+          echo "✅ System dependencies installed"
+          
+          # Method 1: Try snap (most reliable for calcpad)
+          echo "📦 Method 1: Attempting snap installation..."
+          if sudo snap install calcpad --classic 2>/dev/null; then
+            echo "✅ calcpad installed via snap"
           else
-            echo "ℹ️  calcpad not in standard repos, trying calcpad-cli..."
-            sudo apt-get install -y calcpad-cli 2>/dev/null || echo "⚠️ calcpad-cli also not available"
+            echo "⚠️  snap installation failed, trying apt..."
+            
+            # Method 2: Try APT calcpad package
+            echo "📦 Method 2: Attempting apt installation..."
+            if sudo apt-get install -y calcpad 2>/dev/null; then
+              echo "✅ calcpad installed via apt"
+            else
+              echo "⚠️  apt calcpad not available"
+              
+              # Method 3: Try calcpad-cli
+              echo "📦 Method 3: Attempting calcpad-cli..."
+              if sudo apt-get install -y calcpad-cli 2>/dev/null; then
+                echo "✅ calcpad-cli installed"
+              else
+                echo "⚠️  calcpad-cli also not available"
+              fi
+            fi
           fi
           
-          # Method 2: Try alternative installation
-          if ! command -v calcpad-run &> /dev/null; then
-            echo "📥 Attempting snap installation..."
-            sudo snap install calcpad --classic 2>/dev/null || echo "⚠️ Snap installation failed"
-          fi
-          
-          # Install wkhtmltopdf for PDF generation
+          # Install wkhtmltopdf with dependencies
           echo "📦 Installing wkhtmltopdf..."
-          sudo apt-get install -y wkhtmltopdf 2>/dev/null || echo "⚠️ wkhtmltopdf installation skipped"
+          sudo apt-get install -y wkhtmltopdf 2>/dev/null || \
+          (wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb && \
+           sudo apt-get install -y ./wkhtmltox_0.12.6-1.focal_amd64.deb 2>/dev/null && \
+           rm -f wkhtmltox_0.12.6-1.focal_amd64.deb) || \
+          echo "⚠️  wkhtmltopdf installation skipped"
           
-          # Install Python3 and pip for index generation
-          echo "📦 Installing Python3..."
-          sudo apt-get install -y python3 python3-pip 2>/dev/null
-          
-          # Final verification
+          # Verify installations
           echo ""
           echo "🔍 VERIFICATION:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
           if command -v calcpad-run &> /dev/null; then
-            echo "✅ calcpad-run: $(which calcpad-run)"
-            calcpad-run --version 2>/dev/null || echo "  (version check not available)"
+            echo "✅ calcpad-run found at: $(which calcpad-run)"
+            calcpad-run --version 2>/dev/null || echo "   (version: unknown)"
+          elif command -v calcpad &> /dev/null; then
+            echo "✅ calcpad found at: $(which calcpad)"
+          elif snap list calcpad 2>/dev/null; then
+            echo "✅ calcpad snap installed"
+            /snap/bin/calcpad-run --version 2>/dev/null || echo "   (snap version: unknown)"
           else
-            echo "⚠️  calcpad-run: NOT FOUND"
+            echo "⚠️  WARNING: calcpad NOT FOUND"
+            echo "   Searching for calcpad binaries..."
+            find /usr -name "*calcpad*" 2>/dev/null | head -5 || echo "   (none found)"
           fi
           
           if command -v wkhtmltopdf &> /dev/null; then
-            echo "✅ wkhtmltopdf: $(which wkhtmltopdf)"
+            echo "✅ wkhtmltopdf found at: $(which wkhtmltopdf)"
           else
-            echo "⚠️  wkhtmltopdf: NOT FOUND"
+            echo "⚠️  wkhtmltopdf NOT FOUND"
           fi
           
           if command -v python3 &> /dev/null; then
             echo "✅ python3: $(python3 --version)"
           else
-            echo "⚠️  python3: NOT FOUND"
+            echo "⚠️  python3 NOT FOUND"
           fi
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Process CPD Files with Sync
         run: |
@@ -151,36 +190,53 @@ jobs:
                 
                 # Generate HTML via Calcpad
                 if command -v calcpad-run &> /dev/null; then
-                  echo "    ├─ Generating HTML (calcpad-run)..."
-                  echo "       Command: calcpad-run \"$cpd_path\""
+                  CALCPAD_CMD="calcpad-run"
+                elif command -v /snap/bin/calcpad-run &> /dev/null; then
+                  CALCPAD_CMD="/snap/bin/calcpad-run"
+                else
+                  CALCPAD_CMD=""
+                fi
+                
+                if [ -n "$CALCPAD_CMD" ]; then
+                  echo "    ├─ Generating HTML ($CALCPAD_CMD)..."
+                  echo "       File: $cpd_path"
                   
-                  # Run with full error output for debugging
-                  if calcpad-run "$cpd_path" 2>&1; then
+                  # Run with XVFB if needed (for GUI environment)
+                  if xvfb-run -a "$CALCPAD_CMD" "$cpd_path" 2>&1; then
+                    echo "    ├─ ✅ calcpad-run execution successful"
+                  elif "$CALCPAD_CMD" "$cpd_path" 2>&1; then
                     echo "    ├─ ✅ calcpad-run execution successful"
                   else
-                    echo "    ├─ ❌ calcpad-run execution failed (exit code: $?)"
+                    EXIT_CODE=$?
+                    echo "    ├─ ❌ calcpad-run failed (exit code: $EXIT_CODE)"
                   fi
                 else
                   echo "    ├─ ❌ calcpad-run COMMAND NOT FOUND"
-                  echo "       Available commands:"
-                  ls -la /usr/bin/*calcpad* 2>/dev/null || echo "       (No calcpad binaries found)"
-                  
-                  echo "       Attempting alternate method..."
-                  RUNCPD=$(find /usr -name "runcpd" 2>/dev/null | head -1)
+                  echo "       Attempting alternate search..."
+                  RUNCPD=$(find /usr /snap -name "calcpad-run" 2>/dev/null | head -1)
                   if [ -n "$RUNCPD" ]; then
-                    echo "       Found runcpd at: $RUNCPD"
-                    bash "$RUNCPD" "$cpd_path" 2>&1 || echo "       (runcpd also failed)"
+                    echo "       Found at: $RUNCPD"
+                    if xvfb-run -a "$RUNCPD" "$cpd_path" 2>&1; then
+                      echo "       ✅ Execution successful"
+                    elif "$RUNCPD" "$cpd_path" 2>&1; then
+                      echo "       ✅ Execution successful"
+                    else
+                      echo "       ❌ Execution failed"
+                    fi
+                  else
+                    echo "       (No calcpad-run binary found anywhere!)"
                   fi
                 fi
                 
                 # Check if HTML was actually created
                 echo "    ├─ Checking for generated HTML..."
                 if [ -f "cpdinput/$filename.html" ]; then
-                  echo "    ├─ ✅ Found: cpdinput/$filename.html ($(du -h cpdinput/$filename.html | cut -f1))"
+                  FILE_SIZE=$(du -h cpdinput/$filename.html | cut -f1)
+                  echo "    ├─ ✅ Found: cpdinput/$filename.html ($FILE_SIZE)"
                 else
                   echo "    ├─ ❌ NOT FOUND: cpdinput/$filename.html"
                   echo "       Contents of cpdinput/ directory:"
-                  ls -lah cpdinput/ | grep "$filename"
+                  ls -lah cpdinput/ 2>/dev/null | grep -E "\.html|$filename" || echo "       (No matches found)"
                 fi
                 
                 # Move HTML to output folder
