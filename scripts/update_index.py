@@ -72,23 +72,26 @@ def extract_metadata(html_path):
         # Determine the best title/description
         main_title = parser.h1_text or parser.title or Path(html_path).stem.replace('_', ' ').title()
         
+        # Clean generic titles
+        if "Created with Calcpad" in main_title or "Calcpad" == main_title.strip():
+            main_title = Path(html_path).stem.replace('_', ' ').title()
+
         # Summary description
         summary = ""
-        if parser.paragraphs:
-            summary = parser.paragraphs[0]
+        paragraphs = [p for p in parser.paragraphs if "Created with Calcpad" not in p and len(p.strip()) > 5]
+        if paragraphs:
+            summary = paragraphs[0]
         elif parser.h2_texts:
             summary = " • ".join(parser.h2_texts[:2])
             
         if not summary:
             summary = "Báo cáo tính toán kỹ thuật"
         
-        # FIX: If title is generic "Created with Calcpad", use summary or filename
-        if "Created with Calcpad" in main_title or main_title.lower() == "calcpad":
-            if summary and len(summary) > 5 and "Báo cáo" not in summary:
-                main_title = summary
-                summary = "" # Clear summary so it doesn't repeat
-            else:
-                main_title = Path(html_path).stem.replace('_', ' ').title()
+        # If the title is still generic (like filename based), try to use summary
+        if (Path(html_path).stem.replace('_', ' ').title() in main_title or "Báo cáo" in main_title) and summary and "Báo cáo" not in summary:
+            # Swap if summary seems more descriptive
+            main_title = summary
+            summary = ""
         
         # Logic for icons
         icon = "📊"
@@ -350,7 +353,7 @@ template = f"""<!DOCTYPE html>
     <div class="container">
         <header>
             <div>
-                <h1>📊 MỘT SỐ KẾT QUẢ TÍNH TOÁN SỬ DỤNG CALCPAD</h1>
+                <h1>📊 Engineering Calc Reports</h1>
                 <div class="stats">HydrostructAI Engineering Excellence</div>
             </div>
             <div style="text-align: right;">
