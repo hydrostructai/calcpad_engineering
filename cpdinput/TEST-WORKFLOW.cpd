@@ -1,0 +1,12 @@
+' Test file to trigger GitHub Actions workflow
+' This will verify HTML/PDF generation works
+
+[.Calculator]
+
+' Simple calculation to test Calcpad
+a = 10
+b = 20
+c = a + b
+
+' Output
+"Result: " & c & " units"
