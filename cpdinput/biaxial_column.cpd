@@ -1,14 +1,14 @@
-Phân tích Cột BTCT chịu Nén lệch tâm Xiên - Mô hình Mander
+' Phân tích Cột BTCT chịu Nén lệch tâm Xiên - Mô hình Mander
 
-I. THÔNG SỐ HÌNH HỌC MẶT CẮT
-Kích thước mặt cắt:
+' I. THÔNG SỐ HÌNH HỌC MẶT CẮT
+' Kích thước mặt cắt:
 Lx = 500 \ mm - Chiều rộng mặt cắt
 Ly = 600 \ mm - Chiều cao mặt cắt
 
-Lớp bảo vệ:
+' Lớp bảo vệ:
 cover = 40 \ mm - Lớp bảo vệ
 
-Cốt thép dọc:
+' Cốt thép dọc:
 n_bars_x = 3 \ Số thanh trên cạnh Lx
 n_bars_y = 4 \ Số thanh trên cạnh Ly
 dia_bar = 20 \ mm - Đường kính thép
@@ -17,32 +17,32 @@ As_area_single = π*dia_bar^2/4 \ mm²
 As = As_total*As_area_single \ mm² - Diện tích thép tổng
 rho_s = As/(Lx*Ly)*100 \ % - Tỷ lệ hàm lượng thép
 
-Cốt đai:
+' Cốt đai:
 dia_stirrup = 10 \ mm - Đường kính đai
 spacing = 150 \ mm - Khoảng cách đai
 
-II. ĐỘ BỀN VẬT LIỆU
-Bê tông:
+' II. ĐỘ BỀN VẬT LIỆU
+' Bê tông:
 fc = 30 \ MPa - Cường độ chịu nén
 eps_c0 = 0.002 \ Biến dạng ở đỉnh (unconfined)
 eps_cu = 0.0035 \ Biến dạng giới hạn
 
-Thép:
+' Thép:
 fy = 420 \ MPa - Giới hạn chảy
 Es = 200000 \ MPa - Mô đun đàn hồi
 eps_y = fy/Es \ Biến dạng chảy
 eps_su = 0.01 \ Biến dạng giới hạn thép
 
-III. MÔ HÌNH MANDER - BÊ TÔNG GIA CƯỜNG
+' III. MÔ HÌNH MANDER - BÊ TÔNG GIA CƯỜNG
 bc = Lx - 2*cover \ mm - Chiều rộng lõi
 dc = Ly - 2*cover \ mm - Chiều cao lõi
 
-Áp lực gia cường từ đai:
+' Áp lực gia cường từ đai:
 As_stirrup = π*dia_stirrup^2/4 \ mm² - Diện tích đai
 fl_x = 2*As_stirrup*fy/(spacing*dc) \ MPa - Áp lực theo x
 fl_y = 2*As_stirrup*fy/(spacing*bc) \ MPa - Áp lực theo y
 
-Hệ số hiệu quả gia cường (Mander 1988):
+' Hệ số hiệu quả gia cường (Mander 1988):
 s_prime = spacing - dia_stirrup \ mm
 ke_x = (1 - s_prime/(2*bc))^2 \ Hệ số hiệu quả x
 ke_y = (1 - s_prime/(2*dc))^2 \ Hệ số hiệu quả y
@@ -52,56 +52,56 @@ fl_eff_x = ke*fl_x \ MPa
 fl_eff_y = ke*fl_y \ MPa
 fl_eff = (fl_eff_x + fl_eff_y)/2 \ MPa - Trung bình
 
-Cường độ bê tông gia cường (Mander):
+' Cường độ bê tông gia cường (Mander):
 fcc = fc*(2.254*sqr(1 + 7.94*fl_eff/fc) - 2*fl_eff/fc - 1.254) \ MPa
 eps_cc = eps_c0*(1 + 5*(fcc/fc - 1)) \ Biến dạng đỉnh confined
 
-Tăng cường:
+' Tăng cường:
 increase_strength = round(fcc/fc*100 - 100; 1) \ %
 increase_strain = round(eps_cc/eps_c0*100 - 100; 1) \ %
 
-IV. PHÂN TÍCH ỨNG SUẤT - BIẾN DẠNG MẶT CẮT
+' IV. PHÂN TÍCH ỨNG SUẤT - BIẾN DẠNG MẶT CẮT
 
-Giả định biến dạng phẳng:
-- Biến dạng thớ trên: ε_t
-- Biến dạng thớ dưới: ε_c (nén, âm)
-- Trục trung hòa: c (khoảng cách từ thớ nén)
+' Giả định biến dạng phẳng:
+' - Biến dạng thớ trên: ε_t
+' - Biến dạng thớ dưới: ε_c (nén, âm)
+' - Trục trung hòa: c (khoảng cách từ thớ nén)
 
-Mô hình ứng suất Hognestad (Unconfined):
-- ε ≤ ε_c0: σ_c = f_c [2(ε/ε_c0) - (ε/ε_c0)²]
-- ε > ε_c0: σ_c = f_c [1 - 0.15(ε - ε_c0)/ε_c0]
+' Mô hình ứng suất Hognestad (Unconfined):
+' - ε ≤ ε_c0: σ_c = f_c [2(ε/ε_c0) - (ε/ε_c0)²]
+' - ε > ε_c0: σ_c = f_c [1 - 0.15(ε - ε_c0)/ε_c0]
 
-Mô hình ứng suất Mander (Confined Core):
-- σ_cc = f_cc · x·r / (r - 1 + x^r)
-- x = ε/ε_cc
-- r = E_c/(E_c - E_sec)
-- E_c = 5000√f_c (MPa)
-- E_sec = f_cc/ε_cc
+' Mô hình ứng suất Mander (Confined Core):
+' - σ_cc = f_cc · x·r / (r - 1 + x^r)
+' - x = ε/ε_cc
+' - r = E_c/(E_c - E_sec)
+' - E_c = 5000√f_c (MPa)
+' - E_sec = f_cc/ε_cc
 
-Mô hình thép (EPP - Elastic Perfectly Plastic):
-- ε ≤ ε_y: σ_s = E_s·ε
-- ε > ε_y: σ_s = f_y (kéo)
-- ε < -ε_y: σ_s = -f_y (nén)
+' Mô hình thép (EPP - Elastic Perfectly Plastic):
+' - ε ≤ ε_y: σ_s = E_s·ε
+' - ε > ε_y: σ_s = f_y (kéo)
+' - ε < -ε_y: σ_s = -f_y (nén)
 
-V. PHÂN TÍCH CHỊU NÉN ĐƠN TRỤC (P-EPSILON)
+' V. PHÂN TÍCH CHỊU NÉN ĐƠN TRỤC (P-EPSILON)
 
-Phân tích đơn giản hóa (Nén đồng nhất):
+' Phân tích đơn giản hóa (Nén đồng nhất):
 
-Trường hợp 1: Biến dạng đồng nhất ε = 0.001
+' Trường hợp 1: Biến dạng đồng nhất ε = 0.001
 eps_test_1 = 0.001
 ratio_1 = eps_test_1/eps_c0
 sigma_c_1 = fc*(2*ratio_1 - ratio_1^2) \ MPa - Hognestad parabolic
 sigma_s_1 = min(Es*eps_test_1; fy) \ MPa
 P_1 = sigma_c_1*(Lx*Ly - As) + sigma_s_1*As \ kN - Lực nén
 
-Trường hợp 2: Biến dạng đồng nhất ε = ε_c0 (đỉnh)
+' Trường hợp 2: Biến dạng đồng nhất ε = ε_c0 (đỉnh)
 eps_test_2 = eps_c0
 ratio_2 = eps_test_2/eps_c0
 sigma_c_2 = fc*(2*ratio_2 - ratio_2^2) \ MPa - tại đỉnh
 sigma_s_2 = min(Es*eps_test_2; fy) \ MPa
 P_2 = sigma_c_2*(Lx*Ly - As) + sigma_s_2*As \ kN
 
-Trường hợp 3: Biến dạng đồng nhất ε = ε_cc (confined peak)
+' Trường hợp 3: Biến dạng đồng nhất ε = ε_cc (confined peak)
 eps_test_3 = eps_cc
 Ec_concrete = 5000*sqr(fc) \ MPa
 Esec_concrete = fcc/eps_cc
@@ -115,14 +115,14 @@ Ac_core = bc*dc \ mm²
 Ac_cover = Lx*Ly - Ac_core \ mm²
 P_3 = sigma_cc_3*Ac_core + sigma_c_3*Ac_cover + sigma_s_3*As \ kN
 
-Sức chịu tải tối đa ước tính:
+' Sức chịu tải tối đa ước tính:
 Pn_max = max(P_1; max(P_2; P_3)) \ kN
 
-VI. PHÂN TÍCH CHỊU UỐN ĐƠN TRỤC
+' VI. PHÂN TÍCH CHỊU UỐN ĐƠN TRỤC
 
-Giả định: Nén lệch tâm uốn quanh trục X (Mx ≠ 0, My = 0)
+' Giả định: Nén lệch tâm uốn quanh trục X (Mx ≠ 0, My = 0)
 
-Phương pháp đơn giản hóa Whitney:
+' Phương pháp đơn giản hóa Whitney:
 beta1 = 0.85 \ Hệ số khối ứng suất
 c_assumed = Ly*0.3 \ mm - Giả định 30% chiều cao
 a = beta1*c_assumed \ mm - Chiều cao khối ứng suất
@@ -136,15 +136,15 @@ fs_comp = min(Es*abs(eps_s_comp); fy)
 As_tension = n_bars_x*As_area_single \ mm²
 As_comp = n_bars_x*As_area_single \ mm²
 
-Cân bằng lực:
+' Cân bằng lực:
 Cc = 0.85*fc*a*Lx \ kN - Lực nén bê tông
 Ts = fs_tension*As_tension/1000 \ kN - Lực kéo thép
 Cs = fs_comp*As_comp/1000 \ kN - Lực nén thép
 
-Moment:
+' Moment:
 Mn_x = (Cc*(Ly/2 - a/2) + Cs*(Ly/2 - d_comp) + Ts*(d_eff - Ly/2))/1000000 \ kN·m
 
-Tương tự cho trục Y (My ≠ 0, Mx = 0):
+' Tương tự cho trục Y (My ≠ 0, Mx = 0):
 c_assumed_y = Lx*0.3
 a_y = beta1*c_assumed_y
 d_eff_y = Lx - cover - dia_bar/2
@@ -160,14 +160,14 @@ Ts_y = fs_tension_y*As_tension_y/1000
 Cs_y = fs_comp_y*As_comp_y/1000
 Mn_y = (Cc_y*(Lx/2 - a_y/2) + Cs_y*(Lx/2 - d_comp_y) + Ts_y*(d_eff_y - Lx/2))/1000000 \ kN·m
 
-VII. KIỂM TRA CHỊU UỐN XIÊN (BRESLER)
+' VII. KIỂM TRA CHỊU UỐN XIÊN (BRESLER)
 
-Lực và moment tác dụng:
+' Lực và moment tác dụng:
 P_applied = 1500 \ kN - Lực nén dọc trục
 Mx_applied = 150 \ kN·m - Moment quanh X
 My_applied = 100 \ kN·m - Moment quanh Y
 
-Phương trình tương tác Bresler:
+' Phương trình tương tác Bresler:
 (M_x/M_nx)^α + (M_y/M_ny)^α ≤ 1.0
 
 alpha = 1.5 \ Hệ số Bresler (thường 1.0-2.0)
@@ -175,12 +175,12 @@ bresler_check = (Mx_applied/Mn_x)^alpha + (My_applied/Mn_y)^alpha
 
 Bresler = $round(bresler_check; 3) $#if bresler_check ≤ 1.0 ≤ $#else > $#end if 1.0
 
-Tỷ lệ sử dụng khả năng:
+' Tỷ lệ sử dụng khả năng:
 usage_x = Mx_applied/Mn_x*100 \ % - Sử dụng moment X
 usage_y = My_applied/Mn_y*100 \ % - Sử dụng moment Y
 usage_max = max(usage_x; usage_y) \ % - Sử dụng tối đa
 
 
 
-Phân tích Cột BTCT Xiên - Mô hình Mander & Bresler
-@hydrostructai.com
+' Phân tích Cột BTCT Xiên - Mô hình Mander & Bresler
+' @hydrostructai.com

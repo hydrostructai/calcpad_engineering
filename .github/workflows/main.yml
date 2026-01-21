@@ -275,7 +275,7 @@ jobs:
                 echo "  ❌ HTML not generated - skipping PDF"
               fi
               
-            done <<< "$CHANGED_FILES"
+            done <<< "$PROCESS_FILES"
           fi
           
           # Report final state

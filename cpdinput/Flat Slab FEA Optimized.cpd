@@ -523,3 +523,5 @@ $Map{M_y(x; y) @ x = 0 : l_a & y = 0 : l_b}
 'Bending moments <var>M</var><sub>xy</sub>
 transp(Mxy)'kNm/m
 $Map{M_xy(x; y) @ x = 0 : l_a & y = 0 : l_b}
+
+'@hydrostructai.com
