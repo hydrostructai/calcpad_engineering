@@ -82,6 +82,14 @@ def extract_metadata(html_path):
         if not summary:
             summary = "Báo cáo tính toán kỹ thuật"
         
+        # FIX: If title is generic "Created with Calcpad", use summary or filename
+        if "Created with Calcpad" in main_title or main_title.lower() == "calcpad":
+            if summary and "Báo cáo" not in summary:
+                main_title = summary
+                summary = "" # Clear summary so it doesn't repeat
+            else:
+                main_title = Path(html_path).stem.replace('_', ' ').title()
+        
         # Logic for icons
         icon = "📊"
         lower_title = main_title.lower()
@@ -174,12 +182,14 @@ if reports:
     for report in reports:
         pdf_link = f'<a href="cpdpdf/{report["pdf_filename"]}" class="btn-pdf">📕 PDF</a>' if report['has_pdf'] else '<span class="no-pdf">📕 (N/A)</span>'
         
+        summary_html = f'<div class="report-summary">{report["description"]}</div>' if report["description"] else ''
+        
         links_html += f"""            <tr>
                 <td class="col-desc">
                     <a href="cpdoutput/{report['filename']}" style="text-decoration: none;">
                         <div class="report-title">{report['icon']} {report['title']}</div>
                     </a>
-                    <div class="report-summary">{report['description']}</div>
+                    {summary_html}
                 </td>
                 <td class="col-link">
                     {pdf_link}
