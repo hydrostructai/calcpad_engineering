@@ -159,6 +159,20 @@ jobs:
           echo "📋 Detecting changed .cpd files..."
           CHANGED_FILES=$(git show --name-status HEAD 2>/dev/null | grep -E "^[AM]" | grep "\.cpd$" | awk '{print $2}' | sort | uniq)
           DELETED_FILES=$(git show --name-status HEAD 2>/dev/null | grep "^D" | grep "\.cpd$" | awk '{print $2}' | sort | uniq)
+
+          # Detect CPD files missing outputs (HTML/PDF) to reprocess even if not changed
+          echo ""
+          echo "📋 Detecting CPD files missing HTML/PDF..."
+          MISSING_OUTPUTS=""
+          while IFS= read -r cpd_file; do
+            [ -z "$cpd_file" ] && continue
+            filename=$(basename "$cpd_file" .cpd)
+            HTML_PATH="cpdoutput/${filename}.html"
+            PDF_PATH="cpdpdf/${filename}.pdf"
+            if [ ! -f "$HTML_PATH" ] || [ ! -f "$PDF_PATH" ]; then
+              MISSING_OUTPUTS="$MISSING_OUTPUTS\n$cpd_file"
+            fi
+          done < <(find cpdinput -maxdepth 1 -type f -name "*.cpd" | sort)
           
           # Handle deleted files
           if [ -n "$DELETED_FILES" ]; then
@@ -174,13 +188,16 @@ jobs:
             done <<< "$DELETED_FILES"
           fi
           
-          # Process new/modified files
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "✅ No new/modified .cpd files"
+          # Build unified processing list: changed files + missing outputs
+          PROCESS_FILES=$(printf "%b" "$CHANGED_FILES\n$MISSING_OUTPUTS" | sed '/^$/d' | sort -u)
+
+          # Process files if any
+          if [ -z "$PROCESS_FILES" ]; then
+            echo "✅ No work: no changed .cpd and all outputs already exist"
           else
             echo ""
-            echo "🆕 Found changed files:"
-            echo "$CHANGED_FILES" | nl
+            echo "🆕 Files to process (changed or missing outputs):"
+            echo "$PROCESS_FILES" | nl
             
             # Process each file
             while IFS= read -r cpd_file; do
