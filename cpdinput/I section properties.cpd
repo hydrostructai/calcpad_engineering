@@ -231,7 +231,7 @@ h_w = h - t_f1 - t_f2'mm
 '
 '<h4>Steel properties</h4>
 '</td><td>
-'<img alt="I-section.png" width="160" src="./i-section.png">
+'<img alt="I-section.png" width="160" src="./assets/images/i-section.png">
 '</td></tr></table>
 'Yield strength - 'f_y = ? {235}'MPa
 'Tensile strength - 'f_u = ? {360}'MPa
