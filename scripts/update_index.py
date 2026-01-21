@@ -84,7 +84,7 @@ def extract_metadata(html_path):
         
         # FIX: If title is generic "Created with Calcpad", use summary or filename
         if "Created with Calcpad" in main_title or main_title.lower() == "calcpad":
-            if summary and "Báo cáo" not in summary:
+            if summary and len(summary) > 5 and "Báo cáo" not in summary:
                 main_title = summary
                 summary = "" # Clear summary so it doesn't repeat
             else:
@@ -350,7 +350,7 @@ template = f"""<!DOCTYPE html>
     <div class="container">
         <header>
             <div>
-                <h1>📊 Engineering Calc Reports</h1>
+                <h1>📊 MỘT SỐ KẾT QUẢ TÍNH TOÁN SỬ DỤNG CALCPAD</h1>
                 <div class="stats">HydrostructAI Engineering Excellence</div>
             </div>
             <div style="text-align: right;">
@@ -359,11 +359,21 @@ template = f"""<!DOCTYPE html>
             </div>
         </header>
 
-        <div style="margin-bottom: 30px;">
+        <section style="margin-bottom: 40px; padding: 25px; background: #f8fafc; border-radius: 12px; border: 1px solid var(--border);">
+            <h2 style="margin-top: 0; color: var(--text-main); font-size: 1.4rem; display: flex; align-items: center; gap: 10px;">
+                📖 TÀI LIỆU HƯỚNG DẪN CALCPAD
+            </h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">
+                Hướng dẫn chi tiết về cách thiết lập, sử dụng và tối ưu hóa các báo cáo tính toán Calcpad cho kỹ thuật.
+            </p>
             <a href="https://hydrostructai.com/calcpad_engineering" style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; background: var(--primary); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: opacity 0.2s;">
-                📘 TÀI LIỆU HƯỚNG DẪN CALCPAD
+                🌐 TRUY CẬP TÀI LIỆU HƯỚNG DẪN
             </a>
-        </div>
+        </section>
+        
+        <h2 style="font-size: 1.5rem; margin-bottom: 20px; color: var(--text-main); display: flex; align-items: center; gap: 10px;">
+            📋 NỘI DUNG TÍNH TOÁN
+        </h2>
         
         <table>
             <thead>
