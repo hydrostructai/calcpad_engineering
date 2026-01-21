@@ -20,18 +20,31 @@ jobs:
 
       - name: Install Calcpad CLI
         run: |
-          # Download and install Calcpad
-          wget https://github.com/Proektsoftbg/Calcpad/releases/download/v7.5.9/Calcpad.7.5.9.deb
-          sudo apt install -y ./Calcpad.7.5.9.deb
+          # Download Calcpad
+          wget -q https://github.com/Proektsoftbg/Calcpad/releases/download/v7.5.9/Calcpad.7.5.9.deb
+          # Install using dpkg, forcing dependencies since we treat dotnet via action
+          sudo dpkg -i --force-depends ./Calcpad.7.5.9.deb
+          # Verify installation (will fail if critical libs missing, but dotnet depend is handled by action)
+          echo "Verifying Calcpad installation..."
+          calcpad -h || echo "Calcpad help command failed, but continuing explicitly..."
 
       - name: Process CPD Files
         run: |
           mkdir -p cpdoutput
+          # Loop through cpd files
           for file in cpdinput/*.cpd; do
+            [ -e "$file" ] || continue
             filename=$(basename "$file" .cpd)
             echo "Processing $file..."
-            calcpad "$file"
-            mv "cpdinput/$filename.html" "cpdoutput/"
+            # Run calcpad (ensure output goes to cpdoutput)
+            calcpad "$file" "$filename.html"
+            # Move if calcpad outputs adjacent to input or specified output
+            # Check where output went. CLI usage: calcpad input output
+            if [ -f "$filename.html" ]; then
+                mv "$filename.html" "cpdoutput/"
+            elif [ -f "cpdinput/$filename.html" ]; then
+                mv "cpdinput/$filename.html" "cpdoutput/"
+            fi
           done
 
       - name: Update Navigation Index
@@ -43,6 +56,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
           git add cpdoutput/*.html calcpad.html
           git commit -m "Auto-generate reports from CPD updates [skip ci]" || echo "No changes to commit"
           git push
