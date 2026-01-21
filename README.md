@@ -293,42 +293,7 @@ result = ? 'Chỉ hiển thị kết quả cuối
 
 ---
 
-## 📊 Báo Cáo Tự Động
-
-Khi bạn tạo file `.cpd` và lưu vào thư mục, hệ thống sẽ:
-
-1. **Phát hiện file mới** → Tự động xử lý
-2. **Chạy Calcpad** → Tạo file HTML từ `.cpd`
-3. **Chuyển đổi sang PDF** → Tạo bản PDF của báo cáo
-4. **Cập nhật danh sách** → Thêm báo cáo vào index với:
-   - Tiêu đề tự động từ file
-   - Liên kết HTML (báo cáo tương tác)
-   - Liên kết PDF (phiên bản in)
-   - Kích thước file
-   - Mô tả báo cáo
-
-### Quy Trình Tự Động Hoàn Toàn
-```
-Tạo file .cpd
-    ↓
-Lưu vào thư mục
-    ↓
-Hệ thống phát hiện
-    ↓
-Calcpad tạo HTML
-    ↓
-Chuyển đổi thành PDF
-    ↓
-Cập nhật danh sách báo cáo
-    ↓
-Báo cáo sẵn sàng xem
-```
-
-Bạn không cần làm gì thêm - tất cả diễn ra tự động!
-
----
-
-## 🔍 Xử Lý Sự Cố
+##  Xử Lý Sự Cố
 
 | Vấn Đề | Giải Pháp |
 |--------|---------|
