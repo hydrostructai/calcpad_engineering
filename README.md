@@ -2,8 +2,7 @@
 
 Calcpad là công cụ tính toán kỹ thuật mạnh mẽ cho phép bạn viết các phép tính phức tạp dưới dạng văn bản và tự động tạo báo cáo chuyên nghiệp.
 
-**Website Calcpad:** https://www.calcpad.eu  
-**Báo cáo:** [Xem các báo cáo tại đây](https://hydrostructai.com/calcpad_engineering/)
+**Website Calcpad:** https://www.calcpad.eu
 
 ---
 
@@ -70,7 +69,7 @@ M = ? "Moment uốn = ?"
 3. Nhấn "Generate" hoặc Ctrl+G
 4. Xem kết quả tạo thành file `my_analysis.html`
 
-**Trên Linux/GitHub:**
+**Trên Linux:**
 ```bash
 calcpad my_analysis.cpd
 ```
@@ -253,18 +252,6 @@ wkhtmltopdf my_analysis.html my_analysis.pdf
 
 ---
 
-## 🔗 Liên Kết Hữu Ích
-
-| Tài Nguyên | Link |
-|-----------|------|
-| **Calcpad Official** | https://www.calcpad.eu |
-| **Calcpad Forum** | https://www.calcpad.eu/forum |
-| **Calcpad Docs** | https://www.calcpad.eu/docs |
-| **Báo cáo HydrostructAI** | https://hydrostructai.com/calcpad_engineering/ |
-| **Hỗ trợ** | support@calcpad.eu |
-
----
-
 ## ⚡ Mẹo & Thủ Thuật
 
 ### 1. Tái Sử Dụng Template
@@ -306,22 +293,49 @@ result = ? 'Chỉ hiển thị kết quả cuối
 
 ---
 
+## 📊 Báo Cáo Tự Động
+
+Khi bạn tạo file `.cpd` và lưu vào thư mục, hệ thống sẽ:
+
+1. **Phát hiện file mới** → Tự động xử lý
+2. **Chạy Calcpad** → Tạo file HTML từ `.cpd`
+3. **Chuyển đổi sang PDF** → Tạo bản PDF của báo cáo
+4. **Cập nhật danh sách** → Thêm báo cáo vào index với:
+   - Tiêu đề tự động từ file
+   - Liên kết HTML (báo cáo tương tác)
+   - Liên kết PDF (phiên bản in)
+   - Kích thước file
+   - Mô tả báo cáo
+
+### Quy Trình Tự Động Hoàn Toàn
+```
+Tạo file .cpd
+    ↓
+Lưu vào thư mục
+    ↓
+Hệ thống phát hiện
+    ↓
+Calcpad tạo HTML
+    ↓
+Chuyển đổi thành PDF
+    ↓
+Cập nhật danh sách báo cáo
+    ↓
+Báo cáo sẵn sàng xem
+```
+
+Bạn không cần làm gì thêm - tất cả diễn ra tự động!
+
+---
+
 ## 🔍 Xử Lý Sự Cố
 
 | Vấn Đề | Giải Pháp |
 |--------|---------|
 | **Lỗi cú pháp** | Kiểm tra dấu ngoặc kép, dấu phẩy, toán tử |
 | **Không tính toán được** | Kiểm tra đơn vị, biến chưa khai báo |
-| **HTML không được tạo** | Chắc chắn file `.cpd` không có lỗi |
-| **PDF lỗi định dạng** | Kiểm tra wkhtmltopdf đã cài đặt |
-
----
-
-## 📚 Tài Liệu Bổ Sung
-
-- **[Guide-setup-run-calcpad.md](Guide-setup-run-calcpad.md)** - Hướng dẫn triển khai GitHub Actions
-- **[PDF_GENERATION.md](PDF_GENERATION.md)** - Chi tiết về tạo PDF
-- **https://hydrostructai.com/calcpad_engineering/** - Xem các báo cáo thực tế
+| **HTML không được tạo** | Chắc chắn file `.cpd` không có lỗi cú pháp |
+| **PDF lỗi định dạng** | Kiểm tra Calcpad đã tạo HTML thành công |
 
 ---
 
