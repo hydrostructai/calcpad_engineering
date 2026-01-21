@@ -109,13 +109,13 @@ jobs:
             fi
           fi
 
-          # Try 3: Build from source if still unavailable
+          # Try 3: Build from source if still unavailable (use official repo Proektsoftbg/Calcpad)
           if [ "${CALCPAD_USE_DOCKER:-}" != "true" ] && [ "${CALCPAD_INSTALLED:-}" != "true" ]; then
             echo ""
             echo "🔧 Building Calcpad from source (fallback)..."
             SRC_DIR=/tmp/calcpad-src
             rm -rf "$SRC_DIR"
-            if git clone --depth 1 https://github.com/Proectors/Calcpad.git "$SRC_DIR" >/tmp/calcpad-clone.log 2>&1; then
+            if git clone --depth 1 https://github.com/Proektsoftbg/Calcpad.git "$SRC_DIR" >/tmp/calcpad-clone.log 2>&1; then
               echo "   ✅ Source cloned"
               if dotnet publish "$SRC_DIR/Calcpad.Cli/Calcpad.Cli.csproj" -c Release -r linux-x64 -p:PublishSingleFile=true -p:PublishTrimmed=false --self-contained true >/tmp/calcpad-build.log 2>&1; then
                 PUBLISH_DIR=$(ls -d $SRC_DIR/Calcpad.Cli/bin/Release/*/linux-x64/publish 2>/dev/null | head -1)
