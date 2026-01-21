@@ -21,6 +21,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
       - name: Install Dependencies
         continue-on-error: true
         run: |
@@ -101,6 +106,33 @@ jobs:
               else
                 echo "⚠️  Both PPA and snap failed"
               fi
+            fi
+          fi
+
+          # Try 3: Build from source if still unavailable
+          if [ "${CALCPAD_USE_DOCKER:-}" != "true" ] && [ "${CALCPAD_INSTALLED:-}" != "true" ]; then
+            echo ""
+            echo "🔧 Building Calcpad from source (fallback)..."
+            SRC_DIR=/tmp/calcpad-src
+            rm -rf "$SRC_DIR"
+            if git clone --depth 1 https://github.com/Proectors/Calcpad.git "$SRC_DIR" >/tmp/calcpad-clone.log 2>&1; then
+              echo "   ✅ Source cloned"
+              if dotnet publish "$SRC_DIR/Calcpad.Cli/Calcpad.Cli.csproj" -c Release -r linux-x64 -p:PublishSingleFile=true -p:PublishTrimmed=false --self-contained true >/tmp/calcpad-build.log 2>&1; then
+                PUBLISH_DIR=$(ls -d $SRC_DIR/Calcpad.Cli/bin/Release/*/linux-x64/publish 2>/dev/null | head -1)
+                if [ -n "$PUBLISH_DIR" ] && [ -f "$PUBLISH_DIR/Calcpad.Cli" ]; then
+                  sudo cp "$PUBLISH_DIR/Calcpad.Cli" /usr/local/bin/calcpad-run
+                  sudo chmod +x /usr/local/bin/calcpad-run
+                  echo "✅ Built calcpad-run from source"
+                  echo "CALCPAD_INSTALLED=true" >> $GITHUB_ENV
+                else
+                  echo "⚠️  Build succeeded but binary not found (see /tmp/calcpad-build.log)"
+                  ls -la "$PUBLISH_DIR" 2>/dev/null || true
+                fi
+              else
+                echo "⚠️  Build failed (see /tmp/calcpad-build.log)"
+              fi
+            else
+              echo "⚠️  Could not clone Calcpad source (see /tmp/calcpad-clone.log)"
             fi
           fi
           
