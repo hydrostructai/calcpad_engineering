@@ -17,47 +17,90 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Verify Calcpad Installation
+      - name: Install Calcpad and Dependencies
         run: |
-          calcpad-run --help || echo "⚠️ calcpad-run not available, will be handled by GitHub"
-          echo "Using calcpad-run from system PATH"
+          # Try to find calcpad-run in system
+          if command -v calcpad-run &> /dev/null; then
+            echo "✅ calcpad-run found in PATH"
+            which calcpad-run
+          else
+            echo "⚠️ calcpad-run not found - attempting to locate"
+            find / -name "calcpad-run" -o -name "calcpad.exe" 2>/dev/null | head -3
+          fi
 
       - name: Process CPD Files
         run: |
+          set -x  # Enable debug output
           mkdir -p cpdoutput
-          cd /home/runner/work/calcpad_engineering/calcpad_engineering
           
-          find cpdinput -maxdepth 1 -name "*.cpd" -type f | while IFS= read -r file; do
+          # List all CPD files for debugging
+          echo "=== CPD FILES FOUND ==="
+          find cpdinput -maxdepth 1 -name "*.cpd" -type f
+          echo "========================"
+          
+          # Process each file
+          for file in cpdinput/*.cpd; do
             [ -e "$file" ] || continue
             filename=$(basename "$file" .cpd)
-            echo "🔄 Processing: $filename"
+            echo "🔄 Processing: $filename from $file"
             
-            # Use calcpad-run wrapper script with proper quoting
-            bash /usr/local/bin/calcpad-run "$file" 2>&1 || {
-              echo "⚠️ Warning: Failed to process $filename"
-              continue
-            }
+            # Try calcpad-run first
+            if command -v calcpad-run &> /dev/null; then
+              echo "  Using: calcpad-run"
+              calcpad-run "$file" || true
+            else
+              echo "  ⚠️ calcpad-run not available - trying find"
+              RUNCPD=$(find /usr -name "runcpd" 2>/dev/null | head -1)
+              if [ -n "$RUNCPD" ]; then
+                echo "  Using: $RUNCPD"
+                bash "$RUNCPD" "$file" || true
+              fi
+            fi
             
+            # Check if HTML was generated
             if [ -f "cpdinput/$filename.html" ]; then
               mv "cpdinput/$filename.html" "cpdoutput/$filename.html"
               echo "✅ Generated: cpdoutput/$filename.html"
             else
               echo "❌ HTML not generated for $filename"
+              # List what files are in cpdinput for debugging
+              ls -la cpdinput/ | grep -i "$filename" || echo "No files matching pattern"
             fi
           done
+          
+          echo "=== FINAL CPDOUTPUT CONTENTS ===" 
+          ls -lh cpdoutput/
 
       - name: Update Navigation Index
         run: |
+          echo "🔄 Updating index..."
           python3 scripts/update_index.py
+          echo "✅ Index updated"
+          
+          # Show what was generated
+          echo ""
+          echo "=== FINAL STATE ==="
+          echo "HTML files in cpdoutput:"
+          ls -1 cpdoutput/*.html 2>/dev/null | wc -l
+          echo ""
+          echo "calcpad.html content preview:"
+          grep "report-count" calcpad.html || echo "No report-count found"
 
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add cpdoutput/*.html calcpad.html
-          git commit -m "Auto-generate reports [skip ci]" || echo "No changes to commit"
-          
-          # Use GITHUB_TOKEN for authentication
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/hydrostructai/calcpad_engineering.git
-          git push origin main || echo "Push failed - may already be synced"
+          # Check if there are changes to commit
+          if git diff --quiet cpdoutput/ calcpad.html; then
+            echo "✅ No changes to commit (files already processed)"
+          else
+            echo "📝 Committing generated reports..."
+            git add cpdoutput/*.html calcpad.html
+            git commit -m "Auto-generate reports [skip ci]"
+            
+            # Use GITHUB_TOKEN for authentication
+            git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/hydrostructai/calcpad_engineering.git
+            git push origin main
+            echo "✅ Pushed to GitHub"
+          fi
