@@ -152,13 +152,18 @@ for filename in html_files:
     else:
         print(f"     ⚠ No PDF found for: {report_name}")
     
+    # Get file modification time
+    mtime = os.path.getmtime(filepath)
+    formatted_time = datetime.fromtimestamp(mtime).strftime('%d/%m/%Y %H:%M')
+    
     reports.append({
         'filename': filename,
         'pdf_filename': pdf_filename if has_pdf else None,
         'title': metadata['title'],
         'description': metadata['description'],
         'icon': metadata['icon'],
-        'has_pdf': has_pdf
+        'has_pdf': has_pdf,
+        'created_time': formatted_time
     })
 
 print(f"\n📊 Total reports collected: {len(reports)}")
@@ -171,14 +176,16 @@ if reports:
         
         links_html += f"""            <tr>
                 <td class="col-desc">
-                    <div class="report-title">{report['icon']} {report['title']}</div>
+                    <a href="cpdoutput/{report['filename']}" style="text-decoration: none;">
+                        <div class="report-title">{report['icon']} {report['title']}</div>
+                    </a>
                     <div class="report-summary">{report['description']}</div>
                 </td>
                 <td class="col-link">
-                    <a href="cpdoutput/{report['filename']}" class="btn-html">🌐 HTML</a>
-                </td>
-                <td class="col-link">
                     {pdf_link}
+                </td>
+                <td style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                    {report['created_time']}
                 </td>
             </tr>
 """
@@ -341,13 +348,19 @@ template = f"""<!DOCTYPE html>
                 <small>Updated: {datetime.now().strftime('%d/%m/%Y %H:%M')}</small>
             </div>
         </header>
+
+        <div style="margin-bottom: 30px;">
+            <a href="https://hydrostructai.com/calcpad_engineering" style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; background: var(--primary); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: opacity 0.2s;">
+                📘 TÀI LIỆU HƯỚNG DẪN CALCPAD
+            </a>
+        </div>
         
         <table>
             <thead>
                 <tr>
-                    <th>Nội dung tính toán</th>
-                    <th style="text-align: center;">Bản HTML</th>
-                    <th style="text-align: center;">Bản PDF</th>
+                    <th>NỘI DUNG TÍNH TOÁN</th>
+                    <th style="text-align: center;">PDF</th>
+                    <th style="text-align: center;">THỜI ĐIỂM TẠO</th>
                 </tr>
             </thead>
             <tbody>
