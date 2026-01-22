@@ -251,6 +251,14 @@ calcpad my_analysis.cpd
 # Tạo file: my_analysis.html
 ```
 
+**Sử dụng trên VS Code (Khuyên dùng):**
+1. Cài đặt extension Calcpad từ file `.vsix` hoặc Marketplace.
+2. Mở file `.cpd`.
+3. Nhấn **`Ctrl+Shift+B`** để tính toán và xem kết quả ngay lập tức trong VS Code.
+4. *Lưu ý cho WSL/Linux:* Đảm bảo đã thiết lập đường dẫn CLI trong Settings của VS Code:
+   - `calcpad.cliPath`: `/usr/local/bin/calcpad`
+   - `calcpad.Path`: `/usr/local/bin/calcpad`
+
 **Tạo PDF:**
 ```bash
 wkhtmltopdf my_analysis.html my_analysis.pdf
