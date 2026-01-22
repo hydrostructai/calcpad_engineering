@@ -96,11 +96,12 @@ def extract_metadata(html_path):
         # MANUAL OVERRIDES for cleaner presentation
         filename = Path(html_path).name
         overrides = {
-            'Flat Slab FEA Optimized.html': 'Finite Element Analysis of Flat Slab - Optimized',
-            'Flat Slab FEA.html': 'Finite Element Analysis of Flat Slab',
-            'I section properties.html': 'Design of steel I section beam',
-            'Monte-Carlo-Pi.html': 'Calculation of π by Monte-Carlo algorithm',
-            'Shear Wall Detailing for DCM.html': 'Shear Wall Detailing for Ductility Class'
+            '4. Flat Slab FEA Optimized.html': 'Finite Element Analysis of Flat Slab - Optimized',
+            '3. Flat Slab FEA.html': 'Finite Element Analysis of Flat Slab',
+            '5. I section properties.html': 'Design of steel I section beam',
+            '6. Monte-Carlo-Pi.html': 'Calculation of π by Monte-Carlo algorithm',
+            '2. Shear Wall Detailing for DCM.html': 'Shear Wall Detailing for Ductility Class',
+            '1. parametric_rc_beam.html': 'Mô men uốn giới hạn của dầm BTCT mặt cắt chữ T theo EC2'
         }
         
         if filename in overrides:
@@ -379,13 +380,13 @@ template = f"""<!DOCTYPE html>
 
         <section style="margin-bottom: 40px; padding: 25px; background: #f8fafc; border-radius: 12px; border: 1px solid var(--border);">
             <h2 style="margin-top: 0; color: var(--text-main); font-size: 1.4rem; display: flex; align-items: center; gap: 10px;">
-                📖 TÀI LIỆU HƯỚNG DẪN CALCPAD
+                📖 HƯỚNG DẪN CALCPAD
             </h2>
             <p style="color: var(--text-muted); margin-bottom: 20px;">
                 Hướng dẫn chi tiết về cách thiết lập, sử dụng và tối ưu hóa các báo cáo tính toán Calcpad cho kỹ thuật.
             </p>
             <a href="https://hydrostructai.com/calcpad_engineering" style="display: inline-flex; align-items: center; gap: 10px; padding: 12px 24px; background: var(--primary); color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: opacity 0.2s;">
-                🌐 TRUY CẬP TÀI LIỆU HƯỚNG DẪN
+                🌐 HƯỚNG DẪN SỬ DỤNG CALCPAD
             </a>
         </section>
         

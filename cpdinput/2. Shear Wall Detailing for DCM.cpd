@@ -36,7 +36,6 @@ f_cd = α_cc*f_ck/γ_c'MPa
 ε_cu2 = 0.0035
 'Ultimate compressive strain -'ε_c2 = 0.002
 #show
-
 '<p><b>Longitudinal reinforcement</b></p>
 '<p id="C" style="display:none;">'C = ? {0}'</p>
 'Characteristic yield strength -'f_yk = ? {500}'MPa
