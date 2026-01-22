@@ -1,3 +1,5 @@
+[**🏠 VỀ TRANG CHỦ**](https://hydrostructai.com/)
+
 # Calcpad - Hướng Dẫn Sử Dụng
 
 Calcpad là công cụ tính toán kỹ thuật mạnh mẽ cho phép bạn viết các phép tính phức tạp dưới dạng văn bản và tự động tạo báo cáo chuyên nghiệp.
