@@ -8,6 +8,10 @@ Calcpad là công cụ tính toán kỹ thuật mạnh mẽ cho phép bạn vi�
 
 ---
 
+**[Xem chi tiết các báo cáo mẫu tại đây](https://hydrostructai.com/calcpad_engineering/calcpad.html)**
+
+---
+
 ## 📖 Giới thiệu Calcpad
 
 ### Calcpad là gì?
