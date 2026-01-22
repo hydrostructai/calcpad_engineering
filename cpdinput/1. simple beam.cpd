@@ -1,0 +1,36 @@
+'<h3>Simple supported Beam</h3>'
+'<p>Đây là ví dụ về dầm đơn giản có hai gối tựa, chịu tải trọng phân bố đều.</p>
+'<h3>Input data</h3>'
+'<ul>
+'<li>Length of beam/ Chiều dài dầm L = 6 m</li>
+'<li>Uniformly distributed load/ Tải trọng phân bố đều q = 5 kN/m</li>
+'</ul>
+'<h3>Calculations</h3>'
+'<p>Chúng ta sẽ tính toán phản lực tại các gối tựa, mô men uốn lớn nhất và độ võng của dầm.</p>
+#hide
+L = 6m  ' Chiều dài dầm (m)
+q = 5kN/m  ' Tải trọng phân bố đều (kN/m)   
+#show
+'Shear load- ' V = q*L/2
+'Maximum moment- ' M_max = q*L^2/8
+'<h3>Draw shear force diagram</h3>'
+V(x)=V- q*x
+$Plot{V(x) @ x= 0m: L}
+'<h3>Draw bending moment diagram</h3>'
+M(x)=M_max - q*x^2/2
+$Plot{M(x) @ x= 0m: L}
+'<h3>Calculate deflection at mid-span</h3>'
+
+E = 20000kN/cm^2  ' Modulus of elasticity (kN/cm^2)
+I = 50000cm^4  ' Moment of inertia (cm^4)
+
+' Deflection function along the beam
+δ(x) = q * x * (L^3 - 2*L*x^2 + x^3) / (24 * E * I)
+
+' Maximum deflection at mid-span
+δ_max = 5*q*L^4 / (384*E*I)
+
+'<h3>Deflection diagram</h3>
+$Plot{ δ(x) @ x = 0m : L }
+'@hydrostructai.com
+'
