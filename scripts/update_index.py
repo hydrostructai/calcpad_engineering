@@ -98,10 +98,11 @@ def extract_metadata(html_path):
         overrides = {
             '4. Flat Slab FEA Optimized.html': 'Finite Element Analysis of Flat Slab - Optimized',
             '3. Flat Slab FEA.html': 'Finite Element Analysis of Flat Slab',
-            '5. I section properties.html': 'Design of steel I section beam',
-            '6. Monte-Carlo-Pi.html': 'Calculation of π by Monte-Carlo algorithm',
-            '2. Shear Wall Detailing for DCM.html': 'Shear Wall Detailing for Ductility Class',
-            '1. parametric_rc_beam.html': 'Mô men uốn giới hạn của dầm BTCT mặt cắt chữ T theo EC2'
+            '6. I section properties.html': 'Design of steel I section beam',
+            '7. Monte-Carlo-Pi.html': 'Calculation of π by Monte-Carlo algorithm',
+            '5. Shear Wall Detailing for DCM.html': 'Shear Wall Detailing for Ductility Class',
+            '2. parametric_rc_beam.html': 'Mô men uốn giới hạn của dầm BTCT mặt cắt chữ T theo EC2',
+            '1. simple beam.html': 'Tính toán dầm đơn giản chịu tải trọng phân bố đều',
         }
         
         if filename in overrides:
