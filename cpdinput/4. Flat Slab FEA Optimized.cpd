@@ -5,7 +5,7 @@
 a = hp([3.6; 4.2; 4.2; 3.6])'m
 b = hp([3; 3.6; 3])'m
 'Number of axes -'n_sa = len(a) + 1', 'n_sb = len(b) + 1
-'<img src="./flat-slab.png" width="360">
+'<img src="../assets/images/flat-slab.png" width="360">
 #hide
 x_s = vector_hp(n_sa)','y_s = vector_hp(n_sb)
 $Repeat{x_s.(k + 1) = x_s.k + a.k @ k = 1 : n_sa - 1}
@@ -172,7 +172,7 @@ N_2,ψ(ξ; η) = Φ_4a(ξ)*Φ_2b(η)
 N_3,ψ(ξ; η) = Φ_4a(ξ)*Φ_4b(η)
 N_4,ψ(ξ; η) = Φ_2a(ξ)*Φ_4b(η)
 '</td><td colspan="2" style="width:160pt; text-align:center;">
-'<img src="./plate-element.png" alt="plane-elemen.png" style="width:160pt;" />
+'<img src="../assets/images/plate-element.png" alt="plane-elemen.png" style="width:160pt;" />
 '</td></tr></table>
 '<!--'PlotSVG = 1''PlotWidth = 160''PlotHeight = PlotWidth''PlotPalette = 7'--> 
 '<table><tr><td>
