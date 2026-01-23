@@ -1,5 +1,5 @@
 '<h3>Simple supported Beam</h3>'
-'<p>Đây là ví dụ về dầm đơn giản có hai gối tựa, chịu tải trọng phân bố đều.</p>
+'<p>Dầm đơn giản có hai gối tựa, chịu tải trọng phân bố đều.</p>
 '<h3>Input data</h3>'
 '<ul>
 '<li>Length of beam/ Chiều dài dầm L = 6 m</li>
@@ -18,7 +18,7 @@ V(x)=V- q*x
 $Plot{V(x) @ x= 0m: L}
 '<h3>Draw bending moment diagram</h3>'
 M(x)=q*L*x/2 - q*x^2/2
-$Plot{M(x) @ x= 0m: L}
+$Plot{-M(x) @ x= 0m: L}
 '<h3>Calculate deflection at mid-span</h3>'
 
 E = 20000kN/cm^2  ' Modulus of elasticity (kN/cm^2)
@@ -31,6 +31,6 @@ I = 50000cm^4  ' Moment of inertia (cm^4)
 δ_max = 5*q*L^4 / (384*E*I)
 
 '<h3>Deflection diagram</h3>
-$Plot{ δ(x) @ x = 0m : L }
+$Plot{-δ(x) @ x = 0m : L }
 '@hydrostructai.com
 '
